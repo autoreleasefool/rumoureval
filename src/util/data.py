@@ -7,6 +7,9 @@ import json
 import os
 import sys
 
+from util.lists import filter_none
+from objects.tweet import Tweet
+
 LOGGER = logging.getLogger()
 
 def get_script_path():
@@ -62,10 +65,11 @@ def import_thread(folder):
         with open(os.path.join(folder, 'source-tweet', child)) as source_tweet:
             thread['source'] = json.load(source_tweet)
 
-    thread['replies'] = []
+    thread['replies'] = {}
     for child in os.listdir(os.path.join(folder, 'replies')):
-        with open(os.path.join(folder, 'replies', child)) as reply_tweet:
-            thread['replies'].append(json.load(reply_tweet))
+        with open(os.path.join(folder, 'replies', child)) as reply_tweet_file:
+            reply_tweet = json.load(reply_tweet_file)
+            thread['replies'][reply_tweet['id_str']] = reply_tweet
 
     if os.path.exists(os.path.join(folder, 'context', 'wikipedia')):
         with open(os.path.join(folder, 'context', 'wikipedia')) as wiki:
@@ -100,10 +104,10 @@ def import_tweet_data(folder):
     :type folder:
         `str`
     :rtype:
-        `list` of `dict` or None
+        `dict` or None
     """
     if not os.path.exists(folder):
-        LOGGER.debug('File/folder does not exist: {}'.format(folder))
+        LOGGER.debug('File/folder does not exist: %s', folder)
         return None
 
     if os.path.isfile(folder):
@@ -115,8 +119,13 @@ def import_tweet_data(folder):
         # This is the root of a twitter thread
         tweet_data.append(import_thread(folder))
     else:
-        tweet_data = [import_tweet_data(os.path.join(folder, child)) for child in children]
-    return list(filter(None, tweet_data))
+        for child in children:
+            child_data = import_tweet_data(os.path.join(folder, child))
+            if child_data is not None:
+                tweet_data += child_data
+
+    tweet_data = filter_none(tweet_data) # [x for x in tweet_data if x is not None]
+    return tweet_data
 
 
 def import_annotation_data(folder):
@@ -135,8 +144,48 @@ def import_annotation_data(folder):
     with open(os.path.join(folder, 'subtaskA.json')) as annotation_json:
         task_a_annotations = json.load(annotation_json)
     with open(os.path.join(folder, 'subtaskB.json')) as annotation_json:
-        task_a_annotations = json.load(annotation_json)
+        task_b_annotations = json.load(annotation_json)
     return task_a_annotations, task_b_annotations
+
+
+def build_tweet(tweet_data, tweet_id, structure, is_source=False):
+    """
+    Parses raw twitter data and creates Tweet objects, setting up their parent and child
+    tweets according to the tweet_data structure.
+
+    :param tweet_data:
+        A single Twitter thread
+    :type tweet_data:
+        `dict`
+    :param tweet_id:
+        ID of tweet to build
+    :type root_tweet_id:
+        `str`
+    :param structure:
+        Structure that children tweets follow
+    :type structure:
+        `list` or `dict`
+    :param is_source:
+        True if the tweet is the source tweet of a thread, False otherwise
+    :type is_source:
+        `bool`
+    :rtype:
+        :class:`Tweet`
+    """
+    children = [
+        build_tweet(
+            tweet_data,
+            child_tweet_id,
+            structure[child_tweet_id]
+        ) for child_tweet_id in structure
+    ]
+    children = filter_none(children)
+    if is_source:
+        return Tweet(tweet_data['source'], children=children)
+    elif tweet_id in tweet_data['replies']:
+        return Tweet(tweet_data['replies'][tweet_id], children=children)
+
+    return None
 
 
 def import_data(datasource):
@@ -153,5 +202,15 @@ def import_data(datasource):
     source_annotations = os.path.join(get_script_path(),
                                       '..', 'data', '{}-annotations'.format(datasource))
     tweet_data = import_tweet_data(source_folder)
+
+    parsed_tweets = [
+        build_tweet(
+            thread,
+            thread['source']['id_str'],
+            thread['structure'][thread['source']['id_str']],
+            is_source=True
+        ) for thread in tweet_data
+    ]
+
     annotation_data = import_annotation_data(source_annotations)
-    return tweet_data, annotation_data
+    return parsed_tweets, annotation_data
