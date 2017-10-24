@@ -7,8 +7,11 @@ import json
 import os
 import sys
 
+import magic
+
 from util.lists import filter_none
 from objects.tweet import Tweet
+
 
 LOGGER = logging.getLogger()
 
@@ -113,7 +116,10 @@ def import_thread(folder):
     if os.path.exists(os.path.join(folder, 'context', 'urls')):
         thread['context/urls'] = {}
         for child in os.listdir(os.path.join(folder, 'context', 'urls')):
-            with open(os.path.join(folder, 'context', 'urls', child)) as url_context:
+            context_file_path = os.path.join(folder, 'context', 'urls', child)
+            if magic.from_file(context_file_path, mime=True) != 'text/html':
+                continue
+            with open(context_file_path) as url_context:
                 thread['context/urls'][child] = url_context.read()
     else:
         thread['context/urls'] = None
