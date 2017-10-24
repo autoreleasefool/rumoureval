@@ -1,52 +1,41 @@
 """RumourEval: Determining rumour veracity and support for rumours."""
 
 import argparse
-import logging
+from classification.sdqc import sdqc
+from classification.veracity_prediction import veracity_prediction
+from scoring.Scorer import Scorer
 from util.data import import_data
 from util.log import setup_logger
 
-LOGGER = None
+
 DATASOURCES = ['dev', 'train', 'test']
 
-def import_tweets(datasource):
-    """
-    Import tweet data from the given datasource
-    :param datasource:
-        Data source to use to build and test ML algorithm
-    :type datasource:
-        'dev', 'train', or 'test'
-    """
-    tweets, (task_a_annotations, task_b_annotations) = import_data(datasource)
 
-    if LOGGER.getEffectiveLevel() == logging.DEBUG:
-        LOGGER.debug('Imported %d root tweets from %s', len(tweets), datasource)
-        LOGGER.debug('Imported %d annotations for subtask B', len(task_b_annotations.keys()))
-
-        # Count number of tweets and children
-        tweets_to_iterate = tweets[:]
-        total_tweets = 0
-        for tweet in tweets_to_iterate:
-            total_tweets += 1
-            tweets_to_iterate += list(tweet.children())
-
-        LOGGER.debug('Imported %d child tweets from %s', total_tweets, datasource)
-        LOGGER.debug('Imported %d annotations for subtask A', len(task_a_annotations.keys()))
-
-
-def main():
-    """Parse arguments and execute program."""
-    global LOGGER # pylint:disable=W0603
+def parse_args():
+    """Parse arguments."""
     parser = argparse.ArgumentParser(description='RumourEval, by Tong Liu and Joseph Roque')
     parser.add_argument('datasource', metavar='data', type=str, choices=DATASOURCES,
                         help='datasource for validation. \'dev\', \'train\', or \'test\'')
     parser.add_argument('--verbose', action='store_true',
                         help='enable verbose logging')
+    return parser.parse_args()
 
-    args = parser.parse_args()
 
-    LOGGER = setup_logger(args.verbose)
-    import_tweets(args.datasource)
+def main(args):
+    """Execute RumourEval program."""
+    tweets = import_data(args.datasource)
+
+    task_a_results = sdqc(tweets)
+    task_b_results = veracity_prediction(tweets)
+
+    task_a_scorer = Scorer('A', args.datasource)
+    task_a_scorer.score(task_a_results)
+
+    task_b_scorer = Scorer('B', args.datasource)
+    task_b_scorer.score(task_b_results)
 
 
 if __name__ == "__main__":
-    main()
+    ARGS = parse_args()
+    setup_logger(ARGS.verbose)
+    main(ARGS)

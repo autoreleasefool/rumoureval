@@ -12,13 +12,45 @@ from objects.tweet import Tweet
 
 LOGGER = logging.getLogger()
 
+
 def get_script_path():
     """
     Get the root path which the script was run from.
+
     :rtype:
         `str`
     """
     return os.path.dirname(os.path.realpath(sys.argv[0]))
+
+
+def get_output_path():
+    """
+    Get the path to which output should be saved.
+
+    :rtype:
+        `str`
+    """
+    return os.path.join(get_script_path(), '..', 'output')
+
+
+def get_datasource_path(datasource, annotations=False):
+    """
+    Get the path to input data.
+
+    :param datasource:
+        source of data to import
+    :type datasource:
+        either 'dev', 'train', or 'test'
+    :param annotations:
+        `True` for data annotations, `False` for data. Defaults to `False`
+    :type annotations:
+        `bool`
+    :rtype:
+        `str`
+    """
+    directory = datasource if not annotations else '{}-annotations'.format(datasource)
+    return os.path.join(get_script_path(), '..', 'data', directory)
+
 
 def import_thread(folder):
     """
@@ -38,6 +70,7 @@ def import_thread(folder):
         |- urls
             |- <url_md5>
             |- ...
+
     :param folder:
         folder name to retrieve source tweet from
     :type folder:
@@ -99,6 +132,7 @@ def import_thread(folder):
 def import_tweet_data(folder):
     """
     Imports raw tweet data from the given folder, recursively.
+
     :param folder:
         folder name to retrieve tweets from
     :type folder:
@@ -124,28 +158,8 @@ def import_tweet_data(folder):
             if child_data is not None:
                 tweet_data += child_data
 
-    tweet_data = filter_none(tweet_data) # [x for x in tweet_data if x is not None]
+    tweet_data = filter_none(tweet_data)
     return tweet_data
-
-
-def import_annotation_data(folder):
-    """
-    Imports raw annotation data for the specified data source, indicating the annotation
-    for each tweet ID
-    :param folder:
-        folder of annotations
-    :type folder:
-        `str`
-    :rtype:
-        `dict`
-    """
-    task_a_annotations = {}
-    task_b_annotations = {}
-    with open(os.path.join(folder, 'subtaskA.json')) as annotation_json:
-        task_a_annotations = json.load(annotation_json)
-    with open(os.path.join(folder, 'subtaskB.json')) as annotation_json:
-        task_b_annotations = json.load(annotation_json)
-    return task_a_annotations, task_b_annotations
 
 
 def build_tweet(tweet_data, tweet_id, structure, is_source=False):
@@ -191,16 +205,15 @@ def build_tweet(tweet_data, tweet_id, structure, is_source=False):
 def import_data(datasource):
     """
     Imports raw tweet data from the specified data source, to be parsed later.
+
     :param datasource:
         source of data to import
     :type datasource:
         either 'dev', 'train', or 'test'
     :rtype:
-        `list` of `dict`, `dict`
+        `list` of :class:`Tweet`
     """
-    source_folder = os.path.join(get_script_path(), '..', 'data', datasource)
-    source_annotations = os.path.join(get_script_path(),
-                                      '..', 'data', '{}-annotations'.format(datasource))
+    source_folder = get_datasource_path(datasource)
     tweet_data = import_tweet_data(source_folder)
 
     parsed_tweets = [
@@ -212,5 +225,16 @@ def import_data(datasource):
         ) for thread in tweet_data
     ]
 
-    annotation_data = import_annotation_data(source_annotations)
-    return parsed_tweets, annotation_data
+    if LOGGER.getEffectiveLevel() == logging.DEBUG:
+        LOGGER.debug('Imported %d root tweets from %s', len(parsed_tweets), datasource)
+
+        # Count number of tweets and children
+        tweets_to_iterate = parsed_tweets[:]
+        total_tweets = 0
+        for tweet in tweets_to_iterate:
+            total_tweets += 1
+            tweets_to_iterate += list(tweet.children())
+
+        LOGGER.debug('Imported %d child tweets from %s', total_tweets, datasource)
+
+    return parsed_tweets
