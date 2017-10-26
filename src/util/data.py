@@ -16,6 +16,20 @@ from objects.tweet import Tweet
 LOGGER = logging.getLogger()
 
 
+def size_mb(docs):
+    """
+    Get the size of a list of docs in megabytes
+
+    :param docs:
+        the documents
+    :type docs:
+        `iterable` of `str`
+    :rtype:
+        `int`
+    """
+    return sum(len(s.encode('utf-8')) for s in docs) / 1e6
+
+
 def get_script_path():
     """
     Get the root path which the script was run from.
@@ -168,6 +182,29 @@ def import_tweet_data(folder):
     return tweet_data
 
 
+def import_annotation_data(datasource):
+    """
+    Imports raw annotation data for the specified data source, indicating the annotation
+    for each tweet ID
+
+    :param datasource:
+        source of data to import
+    :type datasource:
+        either 'dev', 'train', or 'test'
+    :rtype:
+        `dict`
+    """
+    task_a_annotations = {}
+    task_b_annotations = {}
+    with open(os.path.join(get_datasource_path(datasource, annotations=True),
+                           'subtaskA.json')) as annotation_json:
+        task_a_annotations = json.load(annotation_json)
+    with open(os.path.join(get_datasource_path(datasource, annotations=True),
+                           'subtaskA.json')) as annotation_json:
+        task_b_annotations = json.load(annotation_json)
+    return task_a_annotations, task_b_annotations
+
+
 def build_tweet(tweet_data, tweet_id, structure, is_source=False):
     """
     Parses raw twitter data and creates Tweet objects, setting up their parent and child
@@ -231,16 +268,12 @@ def import_data(datasource):
         ) for thread in tweet_data
     ]
 
+    root_tweets = parsed_tweets[:]
+    for tweet in parsed_tweets:
+        parsed_tweets += list(tweet.children())
+
     if LOGGER.getEffectiveLevel() == logging.DEBUG:
-        LOGGER.debug('Imported %d root tweets from %s', len(parsed_tweets), datasource)
-
-        # Count number of tweets and children
-        tweets_to_iterate = parsed_tweets[:]
-        total_tweets = 0
-        for tweet in tweets_to_iterate:
-            total_tweets += 1
-            tweets_to_iterate += list(tweet.children())
-
-        LOGGER.debug('Imported %d child tweets from %s', total_tweets, datasource)
+        LOGGER.debug('Imported %d root tweets from %s', len(root_tweets), datasource)
+        LOGGER.debug('Imported %d child tweets from %s', len(parsed_tweets), datasource)
 
     return parsed_tweets

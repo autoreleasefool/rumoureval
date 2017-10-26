@@ -4,7 +4,7 @@ import argparse
 from classification.sdqc import sdqc
 from classification.veracity_prediction import veracity_prediction
 from scoring.Scorer import Scorer
-from util.data import import_data
+from util.data import import_data, import_annotation_data
 from util.log import setup_logger
 
 
@@ -23,10 +23,11 @@ def main(args):
     test_datasource = 'test' if args.test else 'dev'
     tweets_train = import_data('train')
     tweets_test = import_data(test_datasource)
+    train_annotations = import_annotation_data('train')
+    test_annotations = import_annotation_data(test_datasource)
 
-
-    task_a_results = sdqc(tweets_train, tweets_test)
-    task_b_results = veracity_prediction(tweets_train, tweets_test)
+    task_a_results = sdqc(tweets_train, tweets_test, train_annotations[0], test_annotations[0])
+    task_b_results = veracity_prediction(tweets_train, tweets_test, train_annotations[0], test_annotations[0])
 
     task_a_scorer = Scorer('A', test_datasource)
     task_a_scorer.score(task_a_results)
