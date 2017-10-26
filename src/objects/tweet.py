@@ -6,10 +6,11 @@ class Tweet(object):
     and references to any parents or children.
     """
 
-    def __init__(self, raw_tweet, children=None, parent=None):
+    def __init__(self, raw_tweet, children=None, parent=None, is_source=False):
         self._raw_tweet = raw_tweet
         self._children = children
         self._parent = parent
+        self.is_source = is_source
 
         for child in self._children:
             child._parent = self # pylint:disable=W0212

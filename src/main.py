@@ -26,8 +26,11 @@ def main(args):
     train_annotations = import_annotation_data('train')
     test_annotations = import_annotation_data(test_datasource)
 
+    root_tweets_train = [x for x in tweets_train if x.is_source]
+    root_tweets_test = [x for x in tweets_test if x.is_source]
+
     task_a_results = sdqc(tweets_train, tweets_test, train_annotations[0], test_annotations[0])
-    task_b_results = veracity_prediction(tweets_train, tweets_test, train_annotations[0], test_annotations[0])
+    task_b_results = veracity_prediction(root_tweets_train, root_tweets_test, train_annotations[1], test_annotations[1])
 
     task_a_scorer = Scorer('A', test_datasource)
     task_a_scorer.score(task_a_results)

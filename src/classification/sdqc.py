@@ -5,31 +5,12 @@ from time import time
 
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.naive_bayes import BernoulliNB
-from sklearn import metrics
 
+from classification.classify import benchmark
 from util.data import size_mb
 
 
 LOGGER = logging.getLogger()
-
-
-def benchmark(clf, x_train, y_train, x_test, y_test):
-    print('_' * 80)
-    print("Training: ")
-    print(clf)
-    t0 = time()
-    clf.fit(x_train, y_train)
-    train_time = time() - t0
-    print("train time: %0.3fs" % train_time)
-
-    t0 = time()
-    pred = clf.predict(x_test)
-    test_time = time() - t0
-    print("test time:  %0.3fs" % test_time)
-
-    score = metrics.accuracy_score(y_test, pred)
-    print("accuracy:   %0.3f" % score)
-    return pred
 
 
 def sdqc(tweets_train, tweets_test, train_annotations, test_annotations):
@@ -55,7 +36,6 @@ def sdqc(tweets_train, tweets_test, train_annotations, test_annotations):
     :rtype:
         `dict`
     """
-
     tweet_training_data = [x['text'] for x in tweets_train]
     tweet_training_data_size_mb = size_mb(tweet_training_data)
     y_train = [train_annotations[x['id_str']] for x in tweets_train]

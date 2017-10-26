@@ -97,29 +97,33 @@ def import_thread(folder):
     """
     thread = {}
 
-    with open(os.path.join(folder, 'structure.json')) as structure:
-        thread['structure'] = json.load(structure)
+    if os.path.exists(os.path.join(folder, 'structure.json')):
+        with open(os.path.join(folder, 'structure.json')) as structure:
+            thread['structure'] = json.load(structure)
 
-    with open(os.path.join(folder, 'urls.dat')) as url_dat:
-        thread['urls'] = []
-        for line in url_dat.readlines():
-            raw_url = line.split()
-            url = {
-                'hash': raw_url[0],
-                'short': raw_url[1],
-                'full': raw_url[2],
-            }
-            thread['urls'].append(url)
+    if os.path.exists(os.path.join(folder, 'urls.dat')):
+        with open(os.path.join(folder, 'urls.dat')) as url_dat:
+            thread['urls'] = []
+            for line in url_dat.readlines():
+                raw_url = line.split()
+                url = {
+                    'hash': raw_url[0],
+                    'short': raw_url[1],
+                    'full': raw_url[2],
+                }
+                thread['urls'].append(url)
 
-    for child in os.listdir(os.path.join(folder, 'source-tweet')):
-        with open(os.path.join(folder, 'source-tweet', child)) as source_tweet:
-            thread['source'] = json.load(source_tweet)
+    if os.path.exists(os.path.join(folder, 'source-tweet')):
+        for child in os.listdir(os.path.join(folder, 'source-tweet')):
+            with open(os.path.join(folder, 'source-tweet', child)) as source_tweet:
+                thread['source'] = json.load(source_tweet)
 
     thread['replies'] = {}
-    for child in os.listdir(os.path.join(folder, 'replies')):
-        with open(os.path.join(folder, 'replies', child)) as reply_tweet_file:
-            reply_tweet = json.load(reply_tweet_file)
-            thread['replies'][reply_tweet['id_str']] = reply_tweet
+    if os.path.exists(os.path.join(folder, 'replies')):
+        for child in os.listdir(os.path.join(folder, 'replies')):
+            with open(os.path.join(folder, 'replies', child)) as reply_tweet_file:
+                reply_tweet = json.load(reply_tweet_file)
+                thread['replies'][reply_tweet['id_str']] = reply_tweet
 
     if os.path.exists(os.path.join(folder, 'context', 'wikipedia')):
         with open(os.path.join(folder, 'context', 'wikipedia')) as wiki:
@@ -200,7 +204,7 @@ def import_annotation_data(datasource):
                            'subtaskA.json')) as annotation_json:
         task_a_annotations = json.load(annotation_json)
     with open(os.path.join(get_datasource_path(datasource, annotations=True),
-                           'subtaskA.json')) as annotation_json:
+                           'subtaskB.json')) as annotation_json:
         task_b_annotations = json.load(annotation_json)
     return task_a_annotations, task_b_annotations
 
@@ -238,7 +242,7 @@ def build_tweet(tweet_data, tweet_id, structure, is_source=False):
     ]
     children = filter_none(children)
     if is_source:
-        return Tweet(tweet_data['source'], children=children)
+        return Tweet(tweet_data['source'], children=children, is_source=True)
     elif tweet_id in tweet_data['replies']:
         return Tweet(tweet_data['replies'][tweet_id], children=children)
 
