@@ -7,8 +7,8 @@ import json
 import os
 import sys
 import magic
-from src.util.lists import filter_none
-from src.objects.tweet import Tweet
+from .lists import filter_none
+from ..objects.tweet import Tweet
 
 
 LOGGER = logging.getLogger()

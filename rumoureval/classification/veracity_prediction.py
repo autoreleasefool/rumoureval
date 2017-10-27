@@ -4,9 +4,9 @@ import logging
 from time import time
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.naive_bayes import BernoulliNB
-from src.classification.classify import benchmark
-from src.util.data import size_mb
-from src.util.log import get_log_separator
+from .classify import benchmark
+from ..util.data import size_mb
+from ..util.log import get_log_separator
 
 
 LOGGER = logging.getLogger()

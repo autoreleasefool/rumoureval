@@ -6,8 +6,8 @@ import json
 import os.path
 import re
 import subprocess
-from src.util.data import get_datasource_path, get_output_path, get_script_path
-from src.util.log import get_log_separator
+from ..util.data import get_datasource_path, get_output_path, get_script_path
+from ..util.log import get_log_separator
 
 
 LOGGER = logging.getLogger()

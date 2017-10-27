@@ -1,29 +1,34 @@
 """RumourEval: Determining rumour veracity and support for rumours."""
 
 import argparse
-from src.classification.sdqc import sdqc
-from src.classification.veracity_prediction import veracity_prediction
-from src.scoring.Scorer import Scorer
-from src.util.data import import_data, import_annotation_data
-from src.util.log import setup_logger
+import sys
+from .classification.sdqc import sdqc
+from .classification.veracity_prediction import veracity_prediction
+from .scoring.Scorer import Scorer
+from .util.data import import_data, import_annotation_data
+from .util.log import setup_logger
 
 
-LOGGER = None
+def main(args=None):
+    """The main routine."""
+    if args is None:
+        args = sys.argv[1:]
 
-
-def parse_args():
-    """Parse arguments."""
+    # Parse args
     parser = argparse.ArgumentParser(description='RumourEval, by Tong Liu and Joseph Roque')
     parser.add_argument('--test', action='store_true',
                         help='run with test data. defaults to run with dev data')
     parser.add_argument('--verbose', action='store_true',
                         help='enable verbose logging')
-    return parser.parse_args()
+    parsed_args = parser.parse_args()
+    eval_datasource = 'test' if parsed_args.test else 'dev'
 
+    # Setup logger
+    logger = setup_logger(parsed_args.verbose)
 
-def main(args):
-    """Execute RumourEval program."""
-    eval_datasource = 'test' if args.test else 'dev'
+    ########################
+    # Begin classification #
+    ########################
 
     # Import training and evaluation datasets
     tweets_train = import_data('train')
@@ -56,10 +61,8 @@ def main(args):
     task_b_scorer = Scorer('B', eval_datasource)
     task_b_scorer.score(task_b_results)
 
-    LOGGER.info('')
+    logger.info('')
 
 
 if __name__ == "__main__":
-    ARGS = parse_args()
-    LOGGER = setup_logger(ARGS.verbose)
-    main(ARGS)
+    main()

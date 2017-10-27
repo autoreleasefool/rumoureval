@@ -1,0 +1,4 @@
+[MESSAGES CONTROL]
+# R0801 => duplicate-code
+disable=R0801
+
