@@ -6,8 +6,10 @@ import logging
 import json
 import os
 import sys
+from time import time
 import magic
 from .lists import filter_none
+from .log import get_log_separator
 from ..objects.tweet import Tweet
 
 
@@ -259,6 +261,9 @@ def import_data(datasource):
     :rtype:
         `list` of :class:`Tweet`
     """
+    LOGGER.info(get_log_separator())
+    LOGGER.info('Beginning `%s` data import', datasource)
+    start_time = time()
     source_folder = get_datasource_path(datasource)
     tweet_data = import_tweet_data(source_folder)
 
@@ -275,8 +280,8 @@ def import_data(datasource):
     for tweet in parsed_tweets:
         parsed_tweets += list(tweet.children())
 
-    if LOGGER.getEffectiveLevel() == logging.DEBUG:
-        LOGGER.debug('Imported %d root tweets from %s', len(root_tweets), datasource)
-        LOGGER.debug('Imported %d child tweets from %s', len(parsed_tweets), datasource)
+    LOGGER.info('Took %0.3fs to import `%s` data', time() - start_time, datasource)
+    LOGGER.debug('Imported %d root tweets from %s', len(root_tweets), datasource)
+    LOGGER.debug('Imported %d child tweets from %s', len(parsed_tweets), datasource)
 
     return parsed_tweets
