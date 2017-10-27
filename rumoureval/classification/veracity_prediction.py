@@ -9,6 +9,7 @@ from ..util.data import size_mb
 from ..util.log import get_log_separator
 
 
+CLASSES = ['true', 'false', 'unverified']
 LOGGER = logging.getLogger()
 
 
@@ -37,7 +38,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     """
     # pylint:disable=too-many-locals
     LOGGER.info(get_log_separator())
-    LOGGER.info('Beginning SDQC Task (Task A)')
+    LOGGER.info('Beginning Veracity Prediction Task (Task B)')
 
     # Convert training data to documents for bag of words
     training_docs = [x['text'] for x in tweets_train]
@@ -50,7 +51,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     y_eval = [eval_annotations[x['id_str']] for x in tweets_eval]
 
     # Time bag of words vectorization of training data
-    LOGGER.info("Extracting features from the training data using a sparse vectorizer")
+    LOGGER.debug("Extracting features from the training data using a sparse vectorizer")
     start_time = time()
     vectorizer = HashingVectorizer(stop_words='english', alternate_sign=False, n_features=2 ** 16)
     x_train = vectorizer.transform(training_docs)
@@ -59,7 +60,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     LOGGER.debug("n_samples: %d, n_features: %d", x_train.shape[0], x_train.shape[1])
 
     # Time bag of words vectorization of eval data
-    LOGGER.info("Extracting features from the eval data using the same vectorizer")
+    LOGGER.debug("Extracting features from the eval data using the same vectorizer")
     start_time = time()
     x_eval = vectorizer.transform(eval_docs)
     duration = time() - start_time
@@ -67,7 +68,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     LOGGER.debug("n_samples: %d, n_features: %d", x_eval.shape[0], x_eval.shape[1])
 
     # Perform classification
-    lst_results = benchmark(BernoulliNB(alpha=.01), x_train, y_train, x_eval, y_eval)
+    lst_results = benchmark(BernoulliNB(alpha=.01), x_train, y_train, x_eval, y_eval, CLASSES)
 
     # Convert results to dict of tweet ID to predicted class and confidence
     results = {}

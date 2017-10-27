@@ -9,6 +9,7 @@ from ..util.data import size_mb
 from ..util.log import get_log_separator
 
 
+CLASSES = ['support', 'deny', 'query', 'comment']
 LOGGER = logging.getLogger()
 
 
@@ -50,7 +51,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     y_eval = [eval_annotations[x['id_str']] for x in tweets_eval]
 
     # Time bag of words vectorization of training data
-    LOGGER.info("Extracting features from the training data using a sparse vectorizer")
+    LOGGER.debug("Extracting features from the training data using a sparse vectorizer")
     start_time = time()
     vectorizer = HashingVectorizer(stop_words='english', alternate_sign=False, n_features=2 ** 16)
     x_train = vectorizer.transform(training_docs)
@@ -59,7 +60,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     LOGGER.debug("n_samples: %d, n_features: %d", x_train.shape[0], x_train.shape[1])
 
     # Time bag of words vectorization of eval data
-    LOGGER.info("Extracting features from the eval data using the same vectorizer")
+    LOGGER.debug("Extracting features from the eval data using the same vectorizer")
     start_time = time()
     x_eval = vectorizer.transform(eval_docs)
     duration = time() - start_time
@@ -67,7 +68,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     LOGGER.debug("n_samples: %d, n_features: %d", x_eval.shape[0], x_eval.shape[1])
 
     # Perform classification
-    lst_results = benchmark(BernoulliNB(alpha=.01), x_train, y_train, x_eval, y_eval)
+    lst_results = benchmark(BernoulliNB(alpha=.01), x_train, y_train, x_eval, y_eval, CLASSES)
 
     # Convert results to dict of tweet ID to predicted class
     results = {}
