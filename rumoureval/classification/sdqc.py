@@ -2,15 +2,45 @@
 
 import logging
 from time import time
-from sklearn.feature_extraction.text import HashingVectorizer
-from sklearn.naive_bayes import BernoulliNB
-from .classify import benchmark
-from ..util.data import size_mb
+import numpy as np
+from sklearn import metrics
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import FeatureUnion, Pipeline
+from ..pipeline.item_selector import ItemSelector
 from ..util.log import get_log_separator
 
 
 CLASSES = ['support', 'deny', 'query', 'comment']
 LOGGER = logging.getLogger()
+
+
+class TweetDetailExtractor(BaseEstimator, TransformerMixin):
+    """Extract relevant details from tweets."""
+    # pylint:disable=C0103,W0613,R0201
+
+    def fit(self, x, y=None):
+        """Fit to data."""
+        return self
+
+    def transform(self, tweets):
+        """Transform a list of tweets to a set of attributes that sklearn can utilize.
+
+        :param tweets:
+            tweets to transform
+        :type tweets:
+            `list` of :class:`Tweet`
+        :rtype:
+            :class:`np.recarray`
+        """
+        features = np.recarray(shape=(len(tweets),),
+                               dtype=[('text', object)])
+
+        for i, tweet in enumerate(tweets):
+            features['text'][i] = tweet['text']
+
+        return features
 
 
 def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
@@ -40,39 +70,58 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     LOGGER.info(get_log_separator())
     LOGGER.info('Beginning SDQC Task (Task A)')
 
-    # Convert training data to documents for bag of words
-    training_docs = [x['text'] for x in tweets_train]
-    training_doc_data_size_mb = size_mb(training_docs)
-    y_train = [train_annotations[x['id_str']] for x in tweets_train]
+    LOGGER.info('Initializing pipeline')
+    pipeline = Pipeline([
+        # Extract useful features from tweets
+        ('extract_tweets', TweetDetailExtractor()),
 
-    # Convert evaluation data to documents for bag of words
-    eval_docs = [x['text'] for x in tweets_eval]
-    eval_doc_data_size_mb = size_mb(eval_docs)
+        # Combine processing of features
+        ('union', FeatureUnion(
+            transformer_list=[
+
+                # Tf-idf on tweet text
+                ('tweet_text', Pipeline([
+                    ('selector', ItemSelector(key='text')),
+                    ('count', CountVectorizer()),
+                ])),
+
+            ],
+
+            # Relative weights of transformations
+            transformer_weights={
+                'tweet_text': 1.0,
+            },
+        )),
+
+        # Use a classifier on the result
+        ('classifier', MultinomialNB(alpha=0.1))
+
+        ])
+    LOGGER.info(pipeline)
+
+    y_train = [train_annotations[x['id_str']] for x in tweets_train]
     y_eval = [eval_annotations[x['id_str']] for x in tweets_eval]
 
-    # Time bag of words vectorization of training data
-    LOGGER.debug("Extracting features from the training data using a sparse vectorizer")
+    # Training on tweets_train
     start_time = time()
-    vectorizer = HashingVectorizer(stop_words='english', alternate_sign=False, n_features=2 ** 16)
-    x_train = vectorizer.transform(training_docs)
-    duration = time() - start_time
-    LOGGER.debug("done in %fs at %0.3fMB/s", duration, training_doc_data_size_mb / duration)
-    LOGGER.debug("n_samples: %d, n_features: %d", x_train.shape[0], x_train.shape[1])
+    pipeline.fit(tweets_train, y_train)
+    LOGGER.debug("train time: %0.3fs", time() - start_time)
 
-    # Time bag of words vectorization of eval data
-    LOGGER.debug("Extracting features from the eval data using the same vectorizer")
+    # Predicting classes for tweets_eval
     start_time = time()
-    x_eval = vectorizer.transform(eval_docs)
-    duration = time() - start_time
-    LOGGER.debug("done in %fs at %0.3fMB/s", duration, eval_doc_data_size_mb / duration)
-    LOGGER.debug("n_samples: %d, n_features: %d", x_eval.shape[0], x_eval.shape[1])
+    predictions = pipeline.predict(tweets_eval)
+    LOGGER.debug("eval time:  %0.3fs", time() - start_time)
 
-    # Perform classification
-    lst_results = benchmark(BernoulliNB(alpha=.01), x_train, y_train, x_eval, y_eval, CLASSES)
+    # Outputting classifier results
+    LOGGER.debug("accuracy:   %0.3f", metrics.accuracy_score(y_eval, predictions))
+    LOGGER.info("\nclassification report:")
+    LOGGER.info(metrics.classification_report(y_eval, predictions, target_names=CLASSES))
+    LOGGER.info("confusion matrix:")
+    LOGGER.info(metrics.confusion_matrix(y_eval, predictions))
 
     # Convert results to dict of tweet ID to predicted class
     results = {}
-    for (i, result) in enumerate(lst_results):
-        results[tweets_eval[i]['id_str']] = result
+    for (i, prediction) in enumerate(predictions):
+        results[tweets_eval[i]['id_str']] = prediction
 
     return results
