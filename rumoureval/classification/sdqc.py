@@ -79,10 +79,10 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
         ('union', FeatureUnion(
             transformer_list=[
 
-                # Tf-idf on tweet text
+                # Count occurrences on tweet text
                 ('tweet_text', Pipeline([
                     ('selector', ItemSelector(key='text')),
-                    ('count', CountVectorizer()),
+                    ('count', CountVectorizer(stop_words='english')),
                 ])),
 
             ],

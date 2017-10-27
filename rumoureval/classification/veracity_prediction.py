@@ -5,8 +5,8 @@ from time import time
 import numpy as np
 from sklearn import metrics
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.naive_bayes import BernoulliNB
 from sklearn.pipeline import FeatureUnion, Pipeline
 from ..pipeline.item_selector import ItemSelector
 from ..util.log import get_log_separator
@@ -79,10 +79,10 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
         ('union', FeatureUnion(
             transformer_list=[
 
-                # Tf-idf on tweet text
+                # Word occurrences on tweet text
                 ('tweet_text', Pipeline([
                     ('selector', ItemSelector(key='text')),
-                    ('count', CountVectorizer()),
+                    ('count', HashingVectorizer(stop_words='english')),
                 ])),
 
             ],
@@ -94,7 +94,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
         )),
 
         # Use a classifier on the result
-        ('classifier', MultinomialNB(alpha=0.1))
+        ('classifier', BernoulliNB(alpha=0.1))
 
         ])
     LOGGER.info(pipeline)
