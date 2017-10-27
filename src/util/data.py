@@ -7,8 +7,8 @@ import json
 import os
 import sys
 import magic
-from util.lists import filter_none
-from objects.tweet import Tweet
+from src.util.lists import filter_none
+from src.objects.tweet import Tweet
 
 
 LOGGER = logging.getLogger()
@@ -93,6 +93,7 @@ def import_thread(folder):
     :rtype:
         `dict`
     """
+    # pylint:disable=too-many-branches
     thread = {}
 
     if os.path.exists(os.path.join(folder, 'structure.json')):

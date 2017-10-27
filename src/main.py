@@ -1,11 +1,14 @@
 """RumourEval: Determining rumour veracity and support for rumours."""
 
 import argparse
-from classification.sdqc import sdqc
-from classification.veracity_prediction import veracity_prediction
-from scoring.Scorer import Scorer
-from util.data import import_data, import_annotation_data
-from util.log import setup_logger
+from src.classification.sdqc import sdqc
+from src.classification.veracity_prediction import veracity_prediction
+from src.scoring.Scorer import Scorer
+from src.util.data import import_data, import_annotation_data
+from src.util.log import setup_logger
+
+
+LOGGER = None
 
 
 def parse_args():
@@ -53,8 +56,10 @@ def main(args):
     task_b_scorer = Scorer('B', eval_datasource)
     task_b_scorer.score(task_b_results)
 
+    LOGGER.info('')
+
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    setup_logger(ARGS.verbose)
+    LOGGER = setup_logger(ARGS.verbose)
     main(ARGS)

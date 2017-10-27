@@ -1,5 +1,6 @@
 """Tweet properties and context"""
 
+
 class Tweet(object):
     """
     Contains details about a single Tweet, including the poster, the context,
@@ -13,8 +14,7 @@ class Tweet(object):
         self.is_source = is_source
 
         for child in self._children:
-            child._parent = self # pylint:disable=W0212
-
+            child._parent = self  # pylint:disable=W0212
 
     def children(self):
         """
@@ -26,7 +26,6 @@ class Tweet(object):
         for child in self._children:
             yield child
 
-
     def parent(self):
         """
         Get the parent tweet of this tweet.
@@ -35,7 +34,6 @@ class Tweet(object):
             :class:`Tweet` or None
         """
         return self._parent
-
 
     def __getitem__(self, name):
         return self._raw_tweet[name] if name in self._raw_tweet else None

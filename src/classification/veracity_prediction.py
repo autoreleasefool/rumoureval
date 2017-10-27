@@ -4,8 +4,9 @@ import logging
 from time import time
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.naive_bayes import BernoulliNB
-from classification.classify import benchmark
-from util.data import size_mb
+from src.classification.classify import benchmark
+from src.util.data import size_mb
+from src.util.log import get_log_separator
 
 
 LOGGER = logging.getLogger()
@@ -34,6 +35,10 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     :rtype:
         `dict`
     """
+    # pylint:disable=too-many-locals
+    LOGGER.info(get_log_separator())
+    LOGGER.info('Beginning SDQC Task (Task A)')
+
     # Convert training data to documents for bag of words
     training_docs = [x['text'] for x in tweets_train]
     training_doc_data_size_mb = size_mb(training_docs)

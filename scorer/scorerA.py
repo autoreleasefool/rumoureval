@@ -18,6 +18,7 @@ print(len(truth_values), 'entries in reference file')
 
 for reference_id in truth_values.keys():
 	if reference_id in submission.keys():
+		print('matching entry:', reference_id)
 		observed += 1
 		if submission[reference_id] == truth_values[reference_id]:
 			correct += 1

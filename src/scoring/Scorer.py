@@ -1,15 +1,18 @@
 """Scores the results of a RumourEval implementation. Uses the provided scoring script."""
+# pylint:disable=too-few-public-methods
 
 import logging
 import json
 import os.path
+import re
 import subprocess
-from util.data import get_datasource_path, get_output_path, get_script_path
-from util.log import get_log_separator
+from src.util.data import get_datasource_path, get_output_path, get_script_path
+from src.util.log import get_log_separator
 
 
-_SCORER_PATH = os.path.join(get_script_path(), '..', 'scorer')
 LOGGER = logging.getLogger()
+_SCORER_PATH = os.path.join(get_script_path(), '..', 'scorer')
+_DEBUG_REGEX = re.compile(r'^((un)?match(ed|ing)|\d+( matched)? entries)')
 
 
 class Scorer(object):
@@ -34,7 +37,6 @@ class Scorer(object):
         self._annotation_file = os.path.join(get_datasource_path(datasource, annotations=True),
                                              'subtask{}.json'.format(task))
 
-
     def _export_results(self, results):
         """Export task results to the output directory.
 
@@ -47,11 +49,9 @@ class Scorer(object):
         with open(self._output_file, 'w') as file:
             json.dump(results, file, sort_keys=True, indent=2)
 
-
     def _clean_up(self):
         """Clean up results."""
         pass
-
 
     def score(self, results):
         """Scores the results of a task.
@@ -65,8 +65,24 @@ class Scorer(object):
         LOGGER.info('Scoring results of task %s:', self._task)
 
         self._export_results(results)
-        subprocess.run(['python',
-                        os.path.join(_SCORER_PATH, 'scorer{}.py'.format(self._task)),
-                        self._annotation_file,
-                        self._output_file])
+        out = subprocess.run(
+            [
+                'python',
+                os.path.join(_SCORER_PATH, 'scorer{}.py'.format(self._task)),
+                self._annotation_file,
+                self._output_file
+            ],
+            stdout=subprocess.PIPE).stdout.decode('utf8')
+
+        out_lines = out.split('\n')
+
+        LOGGER.info(get_log_separator(thick=False))
+        LOGGER.info('Output from Scorer%s.py script:', self._task)
+        LOGGER.debug(out_lines[0])
+        for line in out_lines[1:]:
+            if _DEBUG_REGEX.match(line):
+                LOGGER.debug(line)
+            elif line:
+                LOGGER.info(line)
+
         self._clean_up()
