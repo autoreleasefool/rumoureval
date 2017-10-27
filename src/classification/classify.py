@@ -2,7 +2,6 @@
 
 import logging
 from time import time
-
 from sklearn import metrics
 
 
@@ -36,19 +35,17 @@ def benchmark(clf, x_train, y_train, x_eval, y_eval):
     :rtype:
         `list` of `str`
     """
-    LOGGER.debug('_' * 80)
-    LOGGER.debug("Training: ")
-    LOGGER.debug(clf)
+    LOGGER.info(clf)
     start_time = time()
     clf.fit(x_train, y_train)
     train_time = time() - start_time
-    LOGGER.debug("train time: %0.3fs" % train_time)
+    LOGGER.info("train time: %0.3fs", train_time)
 
     start_time = time()
     predictions = clf.predict(x_eval)
     eval_time = time() - start_time
-    LOGGER.debug("eval time:  %0.3fs" % eval_time)
+    LOGGER.info("eval time:  %0.3fs", eval_time)
 
     score = metrics.accuracy_score(y_eval, predictions)
-    LOGGER.debug("accuracy:   %0.3f" % score)
+    LOGGER.info("accuracy:   %0.3f", score)
     return predictions

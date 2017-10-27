@@ -4,13 +4,13 @@ import logging
 import json
 import os.path
 import subprocess
-
 from util.data import get_datasource_path, get_output_path, get_script_path
 from util.log import get_log_separator
 
-_SCORER_PATH = os.path.join(get_script_path(), '..', 'scorer')
 
+_SCORER_PATH = os.path.join(get_script_path(), '..', 'scorer')
 LOGGER = logging.getLogger()
+
 
 class Scorer(object):
     """
@@ -70,5 +70,3 @@ class Scorer(object):
                         self._annotation_file,
                         self._output_file])
         self._clean_up()
-
-        LOGGER.info(get_log_separator())

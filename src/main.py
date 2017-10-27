@@ -20,22 +20,37 @@ def parse_args():
 
 def main(args):
     """Execute RumourEval program."""
-    test_datasource = 'test' if args.test else 'dev'
+    eval_datasource = 'test' if args.test else 'dev'
+
+    # Import training and evaluation datasets
     tweets_train = import_data('train')
-    tweets_test = import_data(test_datasource)
+    tweets_eval = import_data(eval_datasource)
+
+    # Import annotation data for training and evaluation datasets
     train_annotations = import_annotation_data('train')
-    test_annotations = import_annotation_data(test_datasource)
+    eval_annotations = import_annotation_data(eval_datasource)
 
+    # Get the root tweets for each dataset for veracity prediction
     root_tweets_train = [x for x in tweets_train if x.is_source]
-    root_tweets_test = [x for x in tweets_test if x.is_source]
+    root_tweets_eval = [x for x in tweets_eval if x.is_source]
 
-    task_a_results = sdqc(tweets_train, tweets_test, train_annotations[0], test_annotations[0])
-    task_b_results = veracity_prediction(root_tweets_train, root_tweets_test, train_annotations[1], test_annotations[1])
+    # Perform sdqc task
+    task_a_results = sdqc(tweets_train,
+                          tweets_eval,
+                          train_annotations[0],
+                          eval_annotations[0])
 
-    task_a_scorer = Scorer('A', test_datasource)
+    # Perform veracity prediction task
+    task_b_results = veracity_prediction(root_tweets_train,
+                                         root_tweets_eval,
+                                         train_annotations[1],
+                                         eval_annotations[1])
+
+    # Score tasks and output results
+    task_a_scorer = Scorer('A', eval_datasource)
     task_a_scorer.score(task_a_results)
 
-    task_b_scorer = Scorer('B', test_datasource)
+    task_b_scorer = Scorer('B', eval_datasource)
     task_b_scorer.score(task_b_results)
 
 

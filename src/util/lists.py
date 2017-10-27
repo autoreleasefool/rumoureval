@@ -2,6 +2,7 @@
 List manipulation utilities
 """
 
+
 def filter_none(base):
     """
     Filter items from a list which are None

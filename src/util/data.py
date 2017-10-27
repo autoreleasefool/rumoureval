@@ -6,9 +6,7 @@ import logging
 import json
 import os
 import sys
-
 import magic
-
 from util.lists import filter_none
 from objects.tweet import Tweet
 
