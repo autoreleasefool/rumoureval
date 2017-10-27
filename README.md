@@ -15,3 +15,10 @@
 
 - `--verbose` to get verbose output
 - `--test` to train on training data, then evaluate on test data. Without, model is tested on dev data
+
+## Contributing
+
+Ensure all code passes pylint and pycodestyle tests, with the following invocations:
+
+- `pylint rumoureval setup.py`
+- `pycodestyle --max-line-length=100 rumoureval setup.py`
