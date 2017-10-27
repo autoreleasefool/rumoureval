@@ -55,7 +55,9 @@ def benchmark(clf, x_train, y_train, x_eval, y_eval, classes):
     LOGGER.debug("accuracy:   %0.3f", score)
 
     LOGGER.info("\nclassification report:")
-    LOGGER.info(metrics.classification_report(y_eval, predictions,
-                                              target_names=classes))
+    LOGGER.info(metrics.classification_report(y_eval, predictions, target_names=classes))
+
+    LOGGER.info("confusion matrix:")
+    LOGGER.info(metrics.confusion_matrix(y_eval, predictions))
 
     return predictions
