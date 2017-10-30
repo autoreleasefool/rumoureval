@@ -2,6 +2,7 @@
 
 import logging
 from time import time
+from nltk.stem.porter import PorterStemmer
 import numpy as np
 from sklearn import metrics
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -43,6 +44,38 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
         return features
 
 
+class StemmingCountVectorizer(CountVectorizer):
+    """CountVectorizer which counts occurrences of stemmed words in a document."""
+
+    def __init__(self, *args, **kwargs):
+        try:
+            super(StemmingCountVectorizer, self).__init__(*args, **kwargs)
+        except RuntimeError:
+            pass
+        self._stemmer = PorterStemmer()
+
+
+    def _stem(self, tokens):
+        """
+        Stem a list of tokens to their roots.
+
+        :param tokens:
+            words to stem
+        :type tokens:
+            `list` of `str`
+        :rtype:
+            :class:`Generator` of `str`
+        """
+        for token in tokens:
+            yield self._stemmer.stem(token)
+
+
+    def build_tokenizer(self):
+        """Return a function that splits a string into a list of tokens."""
+        tokenize = super(StemmingCountVectorizer, self).build_tokenizer()
+        return lambda doc: list(self._stem(tokenize(doc)))
+
+
 def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     """
     Classify tweets into one of four categories - support (s), deny (d), query(q), comment (c).
@@ -82,7 +115,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                 # Count occurrences on tweet text
                 ('tweet_text', Pipeline([
                     ('selector', ItemSelector(key='text')),
-                    ('count', CountVectorizer(stop_words='english')),
+                    ('count', StemmingCountVectorizer(stop_words='english')),
                 ])),
 
             ],
@@ -94,7 +127,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
         )),
 
         # Use a classifier on the result
-        ('classifier', MultinomialNB(alpha=0.1))
+        ('classifier', MultinomialNB())
 
         ])
     LOGGER.info(pipeline)
