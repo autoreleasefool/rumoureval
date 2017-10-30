@@ -1,8 +1,10 @@
 """Package for classifying tweets by Support, Deny, Query, or Comment (SDQC)."""
 
 import logging
+import re
 from time import time
 from nltk.stem.porter import PorterStemmer
+from nltk.tokenize.casual import TweetTokenizer, URLS
 import numpy as np
 from sklearn import metrics
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -15,6 +17,7 @@ from ..util.log import get_log_separator
 
 CLASSES = ['support', 'deny', 'query', 'comment']
 LOGGER = logging.getLogger()
+URLS_RE = re.compile(r"""(%s)""" % URLS, re.VERBOSE | re.I | re.UNICODE)
 
 
 class TweetDetailExtractor(BaseEstimator, TransformerMixin):
@@ -46,13 +49,25 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
 
 class StemmingCountVectorizer(CountVectorizer):
     """CountVectorizer which counts occurrences of stemmed words in a document."""
+    # pylint:disable=W0622,R0913,R0914
 
-    def __init__(self, *args, **kwargs):
-        try:
-            super(StemmingCountVectorizer, self).__init__(*args, **kwargs)
-        except RuntimeError:
-            pass
+    def __init__(self, input='content', encoding='utf-8',
+                 decode_error='strict', strip_accents=None,
+                 lowercase=True, preprocessor=None, tokenizer=None,
+                 stop_words=None, token_pattern=r"(?u)\b\w\w+\b",
+                 ngram_range=(1, 1), analyzer='word',
+                 max_df=1.0, min_df=1, max_features=None,
+                 vocabulary=None, binary=False, dtype=np.int64):
+        super(StemmingCountVectorizer, self).__init__(
+            input=input, encoding=encoding,
+            decode_error=decode_error, strip_accents=strip_accents,
+            lowercase=lowercase, preprocessor=preprocessor, tokenizer=tokenizer,
+            stop_words=stop_words, token_pattern=token_pattern,
+            ngram_range=ngram_range, analyzer=analyzer,
+            max_df=max_df, min_df=min_df, max_features=max_features,
+            vocabulary=vocabulary, binary=binary, dtype=dtype)
         self._stemmer = PorterStemmer()
+        self._tokenizer = TweetTokenizer(preserve_case=False, reduce_len=True, strip_handles=True)
 
 
     def _stem(self, tokens):
@@ -67,13 +82,16 @@ class StemmingCountVectorizer(CountVectorizer):
             :class:`Generator` of `str`
         """
         for token in tokens:
-            yield self._stemmer.stem(token)
+            if token[0] == '#' or token[0] == '@':
+                yield token
+            else:
+                yield self._stemmer.stem(token)
 
 
     def build_tokenizer(self):
         """Return a function that splits a string into a list of tokens."""
-        tokenize = super(StemmingCountVectorizer, self).build_tokenizer()
-        return lambda doc: list(self._stem(tokenize(doc)))
+        return lambda doc: list(self._stem([
+            token for token in self._tokenizer.tokenize(doc) if not URLS_RE.match(token)]))
 
 
 def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
@@ -124,6 +142,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
             transformer_weights={
                 'tweet_text': 1.0,
             },
+
         )),
 
         # Use a classifier on the result
@@ -138,6 +157,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     # Training on tweets_train
     start_time = time()
     pipeline.fit(tweets_train, y_train)
+    LOGGER.info("")
     LOGGER.debug("train time: %0.3fs", time() - start_time)
 
     # Predicting classes for tweets_eval
@@ -146,11 +166,14 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     LOGGER.debug("eval time:  %0.3fs", time() - start_time)
 
     # Outputting classifier results
-    LOGGER.debug("accuracy:   %0.3f", metrics.accuracy_score(y_eval, predictions))
-    LOGGER.info("\nclassification report:")
+    LOGGER.info("accuracy:   %0.3f", metrics.accuracy_score(y_eval, predictions))
+    LOGGER.info("classification report:")
     LOGGER.info(metrics.classification_report(y_eval, predictions, target_names=CLASSES))
     LOGGER.info("confusion matrix:")
     LOGGER.info(metrics.confusion_matrix(y_eval, predictions))
+
+    # Uncomment to see vocabulary
+    # LOGGER.info(pipeline.get_params()['union__tweet_text__count'].get_feature_names())
 
     # Convert results to dict of tweet ID to predicted class
     results = {}
