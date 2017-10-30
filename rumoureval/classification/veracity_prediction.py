@@ -68,7 +68,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     """
     # pylint:disable=too-many-locals
     LOGGER.info(get_log_separator())
-    LOGGER.info('Beginning SDQC Task (Task A)')
+    LOGGER.info('Beginning Veracity Prediction Task (Task B)')
 
     LOGGER.info('Initializing pipeline')
     pipeline = Pipeline([
