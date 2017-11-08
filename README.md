@@ -11,10 +11,10 @@
 
 ### Running the code
 
-`python3 src/main.py [--verbose] [--test]`
+`python3 -m rumoureval [--verbose] [--test]`
 
 - `--verbose` to get verbose output
-- `--test` to train on training data, then evaluate on test data. Without, model is tested on dev data
+- `--test` to train on training data, then evaluate on test data. Without, model is tested on validation data
 
 ## Contributing
 
