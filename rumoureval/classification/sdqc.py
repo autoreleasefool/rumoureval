@@ -8,6 +8,7 @@ from nltk.tokenize.casual import TweetTokenizer, URLS
 import numpy as np
 from sklearn import metrics
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import FeatureUnion, Pipeline
@@ -39,10 +40,25 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
             :class:`np.recarray`
         """
         features = np.recarray(shape=(len(tweets),),
-                               dtype=[('text', object)])
+                               dtype=[('text', object),
+                                      ('verified', bool),
+                                      ('hashtags', list),
+                                      ('user_mentions', list),
+                                      ('retweet_count', int),
+                                      ('depth', int)])
 
         for i, tweet in enumerate(tweets):
             features['text'][i] = tweet['text']
+            features['verified'][i] = tweet['user']['verified']
+            features['hashtags'][i] = tweet['entities']['hashtags']
+            features['user_mentions'][i] = tweet['entities']['user_mentions']
+            features['retweet_count'][i] = tweet['retweet_count']
+            features['depth'][i] = 0
+
+            parent = tweet.parent()
+            while parent != None:
+                features['depth'][i] += 1
+                parent = parent.parent()
 
         return features
 
@@ -82,8 +98,12 @@ class StemmingCountVectorizer(CountVectorizer):
             :class:`Generator` of `str`
         """
         for token in tokens:
-            if token[0] == '#' or token[0] == '@':
-                yield token
+            if token[0] == '#':
+                # yield token
+                pass
+            elif token[0] == '@':
+                # yield token
+                pass
             else:
                 yield self._stemmer.stem(token)
 
@@ -92,6 +112,60 @@ class StemmingCountVectorizer(CountVectorizer):
         """Return a function that splits a string into a list of tokens."""
         return lambda doc: list(self._stem([
             token for token in self._tokenizer.tokenize(doc) if not URLS_RE.match(token)]))
+
+
+class VerificationChecker(BaseEstimator, TransformerMixin):
+    """Checks for various attributes of the tweet."""
+    # pylint:disable=C0103,W0613,R0201
+
+    def fit(self, x, y=None):
+        """Fit to data."""
+        return self
+
+    def transform(self, tweets):
+        """Transform a list of tweets to a set of attributes that sklearn can utilize.
+
+        :param tweets:
+            tweets to transform
+        :type tweets:
+            `list` of :class:`Tweet`
+        :rtype:
+            `dict`
+        """
+        return [{'verified': verified_status}
+                for verified_status in tweets]
+
+
+class FeatureCounter(BaseEstimator, TransformerMixin):
+    """Count properties in the text of the tweet"""
+    # pylint:disable=C0103,W0613,R0201
+
+    def __init__(self, name):
+        """Name the feature to count.
+
+        :param name:
+            name of the feature
+        :type name:
+            `str`
+        """
+        self.name = name
+
+    def fit(self, x, y=None):
+        """Fit to data."""
+        return self
+
+    def transform(self, tweets):
+        """Transform a list of tweets to a set of attributes that sklearn can utilize.
+
+        :param tweets:
+            tweets to transform
+        :type tweets:
+            `list` of :class:`Tweet`
+        :rtype:
+            `dict`
+        """
+        return [{'{}_count'.format(self.name): len(feature) if isinstance(feature, list) else feature}
+                for feature in tweets]
 
 
 def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
@@ -136,11 +210,51 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                     ('count', StemmingCountVectorizer(stop_words='english')),
                 ])),
 
+                # Check if the tweeter is verified
+                ('user_verified', Pipeline([
+                    ('selector', ItemSelector(key='verified')),
+                    ('verification', VerificationChecker()),
+                    ('vect', DictVectorizer())
+                ])),
+
+                # Count occurrences of hashtags
+                ('hashtags', Pipeline([
+                    ('selector', ItemSelector(key='hashtags')),
+                    ('count', FeatureCounter(name='hashtags')),
+                    ('vect', DictVectorizer())
+                ])),
+
+                # Count occurrences of user mentions
+                ('user_mentions', Pipeline([
+                    ('selector', ItemSelector(key='user_mentions')),
+                    ('count', FeatureCounter(name='user_mentions')),
+                    ('vect', DictVectorizer())
+                ])),
+
+                # Count number of retweets
+                ('retweet_count', Pipeline([
+                    ('selector', ItemSelector(key='retweet_count')),
+                    ('count', FeatureCounter(name='retweet_count')),
+                    ('vect', DictVectorizer())
+                ])),
+
+                # Count depth of tweet
+                ('tweet_depth', Pipeline([
+                    ('selector', ItemSelector(key='depth')),
+                    ('count', FeatureCounter(name='depth')),
+                    ('vect', DictVectorizer())
+                ])),
+
             ],
 
             # Relative weights of transformations
             transformer_weights={
                 'tweet_text': 1.0,
+                'user_verified': 1.0,
+                'hashtags': 0.5,
+                'user_mentions': 0.5,
+                'retweet_count': 0.5,
+                'tweet_depth': 0.5,
             },
 
         )),
