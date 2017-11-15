@@ -109,41 +109,76 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                 ])),
 
                 # Count numeric properties of the tweets
-                ('count', Pipeline([
-
-                    ('selector', ItemSelector(keys=[
-                        'hashtags',
-                        'user_mentions',
-                        'retweet_count',
-                        'depth',
-                        'verified',
-                    ])),
-
-                    ('count', FeatureCounter(names=[
-                        'hashtags',
-                        'user_mentions',
-                        'retweet_count',
-                        'depth',
-                        'verified',
-                    ])),
-
+                ('count_hashtags', Pipeline([
+                    ('selector', ItemSelector(keys='hashtags')),
+                    ('count', FeatureCounter(names='hashtags')),
                     ('vect', DictVectorizer()),
                 ])),
+
+                ('count_mentions', Pipeline([
+                    ('selector', ItemSelector(keys='user_mentions')),
+                    ('count', FeatureCounter(names='user_mentions')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('count_retweets', Pipeline([
+                    ('selector', ItemSelector(keys='retweet_count')),
+                    ('count', FeatureCounter(names='retweet_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('count_depth', Pipeline([
+                    ('selector', ItemSelector(keys='depth')),
+                    ('count', FeatureCounter(names='depth')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('verified', Pipeline([
+                    ('selector', ItemSelector(keys='verified')),
+                    ('count', FeatureCounter(names='verified')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+
+                # ('count', Pipeline([
+
+                #     ('selector', ItemSelector(keys=[
+                #         'hashtags',
+                #         'user_mentions',
+                #         'retweet_count',
+                #         'depth',
+                #         'verified',
+                #     ])),
+
+                #     ('count', FeatureCounter(names=[
+                #         'hashtags',
+                #         'user_mentions',
+                #         'retweet_count',
+                #         'depth',
+                #         'verified',
+                #     ])),
+
+                #     ('vect', DictVectorizer()),
+                # ])),
 
                 # Count positive and negative words in the tweets
                 ('sentiment', Pipeline([
                     ('selector', ItemSelector(keys='text_stemmed')),
                     ('count', SentimentalCounter(lexicons=sentimental_lexicons)),
                     ('vect', DictVectorizer()),
-                ]))
+                ])),
 
             ],
 
             # Relative weights of transformations
             transformer_weights={
                 'tweet_text': 1.0,
-                'count': 1.0,
-                'sentiment': 0.5,
+                'count_hashtags': 0.5,
+                'count_mentions': 0.5,
+                'count_retweets': 0.5,
+                'count_depth': 0.5,
+                'verified': 0.5,
+                'sentiment': 0.25,
             },
 
         )),

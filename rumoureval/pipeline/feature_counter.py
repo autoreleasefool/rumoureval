@@ -13,7 +13,7 @@ class FeatureCounter(BaseEstimator, TransformerMixin):
         :param names:
             names of the features
         :type names:
-            `list` of `str`
+            `list` of `str` or `str`
         """
         self.names = names
 
@@ -32,10 +32,17 @@ class FeatureCounter(BaseEstimator, TransformerMixin):
             `list`
         """
         transformed = []
-        for name in self.names:
-            for i in range(len(tweets_features[name])):
-                if len(transformed) <= i:
-                    transformed.append({})
-                transformed[i][name] = len(tweets_features[name][i]) if \
-                    isinstance(tweets_features[name][i], list) else tweets_features[name][i]
+        if isinstance(self.names, list):
+            for name in self.names:
+                for i in range(len(tweets_features[name])):
+                    if len(transformed) <= i:
+                        transformed.append({})
+                    transformed[i][name] = len(tweets_features[name][i]) if \
+                        isinstance(tweets_features[name][i], list) else tweets_features[name][i]
+        else:
+            name = self.names
+            for feature in tweets_features:
+                count = len(feature) if isinstance(feature, list) else feature
+                transformed.append({'{}_count'.format(name): count})
+
         return transformed
