@@ -18,7 +18,7 @@ from ..util.log import get_log_separator
 
 
 LOGGER = logging.getLogger()
-CLASSES = ['support', 'deny', 'query', 'comment']
+CLASSES = ['comment', 'deny', 'query', 'support']
 
 
 def get_sentimental_lexicons(stemmed=False):
