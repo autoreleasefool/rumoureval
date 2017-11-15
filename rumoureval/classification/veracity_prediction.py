@@ -2,45 +2,17 @@
 
 import logging
 from time import time
-import numpy as np
 from sklearn import metrics
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.pipeline import FeatureUnion, Pipeline
 from ..pipeline.item_selector import ItemSelector
+from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
 from ..util.log import get_log_separator
 
 
 CLASSES = ['true', 'false', 'unverified']
 LOGGER = logging.getLogger()
-
-
-class TweetDetailExtractor(BaseEstimator, TransformerMixin):
-    """Extract relevant details from tweets."""
-    # pylint:disable=C0103,W0613,R0201
-
-    def fit(self, x, y=None):
-        """Fit to data."""
-        return self
-
-    def transform(self, tweets):
-        """Transform a list of tweets to a set of attributes that sklearn can utilize.
-
-        :param tweets:
-            tweets to transform
-        :type tweets:
-            `list` of :class:`Tweet`
-        :rtype:
-            :class:`np.recarray`
-        """
-        features = np.recarray(shape=(len(tweets),),
-                               dtype=[('text', object)])
-
-        for i, tweet in enumerate(tweets):
-            features['text'][i] = tweet['text']
-
-        return features
 
 
 def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annotations):
