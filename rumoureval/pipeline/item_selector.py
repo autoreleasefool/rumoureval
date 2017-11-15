@@ -30,15 +30,21 @@ class ItemSelector(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
-    key : hashable, required
-        The key corresponding to the desired value in a mappable.
+    keys : hashable, required
+        The keys corresponding to the desired values in a mappable.
     """
 
-    def __init__(self, key):
-        self.key = key
+    def __init__(self, keys):
+        self.keys = keys
 
     def fit(self, x, y=None):
         return self
 
     def transform(self, data_dict):
-        return data_dict[self.key]
+        if isinstance(self.keys, list):
+            data = {}
+            for key in self.keys:
+                data[key] = data_dict[key]
+            return data
+        else:
+            return data_dict[self.keys]

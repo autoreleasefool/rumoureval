@@ -81,7 +81,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
 
                 # Word occurrences on tweet text
                 ('tweet_text', Pipeline([
-                    ('selector', ItemSelector(key='text')),
+                    ('selector', ItemSelector(keys='text')),
                     ('count', HashingVectorizer(stop_words='english')),
                 ])),
 
