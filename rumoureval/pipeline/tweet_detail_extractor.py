@@ -85,7 +85,7 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
             features['depth'][i] = 0
 
             parent = tweet.parent()
-            while parent != None:
+            while parent is not None:
                 features['depth'][i] += 1
                 parent = parent.parent()
 

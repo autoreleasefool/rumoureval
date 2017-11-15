@@ -23,11 +23,10 @@ def pipelinize(function, active=True):
         """List comprehension to apply a function to a list and return results as a list."""
         if active:
             return [function(i) for i in list_or_series]
-        else: # if it's not active, just pass it right back
-            return list_or_series
+        return list_or_series
 
     return FunctionTransformer(
         list_comprehend_a_function,
         validate=False,
-        kw_args={'active':active}
+        kw_args={'active': active}
     )

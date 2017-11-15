@@ -37,5 +37,5 @@ class FeatureCounter(BaseEstimator, TransformerMixin):
                 if len(transformed) <= i:
                     transformed.append({})
                 transformed[i][name] = len(tweets_features[name][i]) if \
-                        isinstance(tweets_features[name][i], list) else tweets_features[name][i]
+                    isinstance(tweets_features[name][i], list) else tweets_features[name][i]
         return transformed
