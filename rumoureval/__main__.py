@@ -6,7 +6,7 @@ import nltk
 from .classification.sdqc import sdqc
 from .classification.veracity_prediction import veracity_prediction
 from .scoring.Scorer import Scorer
-from .util.data import import_data, import_annotation_data
+from .util.data import import_data, import_annotation_data, output_data_by_class
 from .util.log import setup_logger
 
 
@@ -23,6 +23,8 @@ def main(args=None):
                         help='run with test data. defaults to run with dev data')
     parser.add_argument('--verbose', action='store_true',
                         help='enable verbose logging')
+    parser.add_argument('--osorted', action='store_true',
+                        help='output tweets sorted by class')
     parsed_args = parser.parse_args()
     eval_datasource = 'test' if parsed_args.test else 'dev'
 
@@ -44,9 +46,17 @@ def main(args=None):
     train_annotations = import_annotation_data('train')
     eval_annotations = import_annotation_data(eval_datasource)
 
+    # Output tweets sorted by class
+    if parsed_args.osorted:
+        output_data_by_class(tweets_train, train_annotations[0])
+
     # Get the root tweets for each dataset for veracity prediction
     root_tweets_train = [x for x in tweets_train if x.is_source]
     root_tweets_eval = [x for x in tweets_eval if x.is_source]
+
+    # Output tweets sorted by class
+    if parsed_args.osorted:
+        output_data_by_class(root_tweets_train, train_annotations[1])
 
     # Perform sdqc task
     task_a_results = sdqc(tweets_train,

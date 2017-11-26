@@ -285,3 +285,29 @@ def import_data(datasource):
     LOGGER.debug('Imported %d child tweets from %s', len(parsed_tweets), datasource)
 
     return parsed_tweets
+
+
+def output_data_by_class(tweets, annotations):
+    """Output files for each annotation, containing all the tweets similarly annotated.
+
+    :param tweets:
+        the list of tweets
+    :type tweets:
+        `list` of :class:`Tweet`
+    :param annotations
+        tweet IDs mapped to their annotations
+    :type annotations:
+        `dict`
+    """
+    sorted_tweets = {}
+    for tweet in tweets:
+        annotation = annotations[tweet['id_str']]
+        if annotation not in sorted_tweets:
+            sorted_tweets[annotation] = []
+        sorted_tweets[annotation].append(tweet.raw())
+
+    os.makedirs(get_output_path(), exist_ok=True)
+    for annotation in sorted_tweets:
+        with open(os.path.join(get_output_path(), '{}.json'.format(annotation)), 'w') as file:
+            json.dump(sorted_tweets[annotation], file, sort_keys=True, indent=2)
+

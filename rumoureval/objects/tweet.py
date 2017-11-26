@@ -7,6 +7,7 @@ class Tweet(object):
     and references to any parents or children.
     """
 
+
     def __init__(self, raw_tweet, children=None, parent=None, is_source=False):
         self._raw_tweet = raw_tweet
         self._children = children
@@ -15,6 +16,7 @@ class Tweet(object):
 
         for child in self._children:
             child._parent = self  # pylint:disable=W0212
+
 
     def children(self):
         """
@@ -26,6 +28,7 @@ class Tweet(object):
         for child in self._children:
             yield child
 
+
     def parent(self):
         """
         Get the parent tweet of this tweet.
@@ -35,5 +38,19 @@ class Tweet(object):
         """
         return self._parent
 
+
+    def raw(self):
+        """Get the raw tweet JSON.
+
+        :rtype:
+            json
+        """
+        return self._raw_tweet
+
+
     def __getitem__(self, name):
         return self._raw_tweet[name] if name in self._raw_tweet else None
+
+
+    def __str__(self):
+        return str(self._raw_tweet)
