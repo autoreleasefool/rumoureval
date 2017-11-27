@@ -6,6 +6,8 @@ import numpy as np
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize.casual import TweetTokenizer, URLS
 from sklearn.base import BaseEstimator, TransformerMixin
+from ..corpus.contractions import CONTRACTIONS
+from ..corpus.news import is_news
 from ..corpus.opinion import (
     POSITIVE_WORDS, NEGATIVE_WORDS, QUERYING_WORDS, DENYING_WORDS,
     POSITIVE_ACRONYMS, NEGATIVE_ACRONYMS, QUERYING_ACRONYMS, DENYING_ACRONYMS,
@@ -13,7 +15,6 @@ from ..corpus.opinion import (
     SWEAR_WORDS, RACES_RELIGIONS_POLITICAL
 )
 from ..corpus.stop_words import STOP_WORDS
-from ..corpus.contractions import CONTRACTIONS
 
 
 URLS_RE = re.compile(r"""(%s)""" % URLS, re.VERBOSE | re.I | re.UNICODE)
@@ -117,6 +118,8 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                                       ('user_mentions', list),
                                       ('retweet_count', int),
                                       ('depth', int),
+                                      ('is_news', int),
+                                      ('is_root', int),
                                       ('positive_words', list),
                                       ('negative_words', list),
                                       ('querying_words', list),
@@ -140,7 +143,15 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
             features['hashtags'][i] = tweet['entities']['hashtags']
             features['user_mentions'][i] = tweet['entities']['user_mentions']
             features['retweet_count'][i] = tweet['retweet_count']
-            features['depth'][i] = 0
+            depth = 0
+            parent = tweet.parent()
+            while parent is not None:
+                depth += 1
+                parent = parent.parent()
+            features['depth'][i] = depth
+
+            features['is_news'][i] = 1 if is_news(tweet['user']['screen_name']) else 0
+            features['is_root'][i] = 0 if depth == 0 else 1
 
             # Sentiment analysis
             features['positive_words'][i] = [
@@ -162,9 +173,6 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 word for word in stemmed if word in STEMMED_LEXICON['personal']
                 ]
 
-            parent = tweet.parent()
-            while parent is not None:
-                features['depth'][i] += 1
-                parent = parent.parent()
+
 
         return features

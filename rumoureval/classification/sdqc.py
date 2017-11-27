@@ -140,15 +140,27 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                     ('vect', DictVectorizer()),
                 ])),
 
-                ('count_depth', Pipeline([
-                    ('selector', ItemSelector(keys='depth')),
-                    ('count', FeatureCounter(names='depth')),
-                    ('vect', DictVectorizer()),
-                ])),
+                # ('count_depth', Pipeline([
+                #     ('selector', ItemSelector(keys='depth')),
+                #     ('count', FeatureCounter(names='depth')),
+                #     ('vect', DictVectorizer()),
+                # ])),
 
                 ('verified', Pipeline([
                     ('selector', ItemSelector(keys='verified')),
                     ('count', FeatureCounter(names='verified')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('is_news', Pipeline([
+                    ('selector', ItemSelector(keys='is_news')),
+                    ('count', FeatureCounter(names='is_news')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('is_root', Pipeline([
+                    ('selector', ItemSelector(keys='is_root')),
+                    ('count', FeatureCounter(names='is_root')),
                     ('vect', DictVectorizer()),
                 ])),
 
@@ -188,12 +200,14 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                 'count_hashtags': 0.5,
                 'count_mentions': 0.5,
                 'count_retweets': 0.5,
-                'count_depth': 0.5,
+                # 'count_depth': 0.5,
                 'verified': 0.5,
                 'pos_neg_sentiment': 1.0,
-                'denying_words': 10.0,
+                'denying_words': 20.0,
                 'querying_words': 10.0,
-                'offensiveness': 10.0,
+                'offensiveness': 20.0,
+                'is_news': 10.0,
+                'is_root': 20.0,
             },
 
         )),
