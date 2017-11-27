@@ -40,6 +40,29 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
         self._strip_hashtags = strip_hashtags
         self._strip_mentions = strip_mentions
 
+
+    @staticmethod
+    def get_parseable_tweet_text(tweet):
+        """Given a tweet, return the most parseable tweet text.
+
+        :param tweet:
+            a tweet
+        :type:
+            :class:`Tweet`
+        :rtype:
+            `str`
+        """
+        # Expanding tweet text for better accuracy
+        expanded_text = tweet['text'].encode('ascii', 'ignore').decode('ascii')
+        expanded_text = unescape(expanded_text)
+        expanded_text = expanded_text.split(' ')
+        expanded_text = [
+            CONTRACTIONS[word] if word in CONTRACTIONS else word for word in expanded_text
+            ]
+        expanded_text = ' '.join(expanded_text)
+        return expanded_text
+
+
     def _stem(self, tokens):
         """
         Stem a list of tokens to their roots.
@@ -102,13 +125,7 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                                       ('personal_words', list)])
 
         for i, tweet in enumerate(tweets):
-            # Expanding tweet text for better accuracy
-            expanded_text = unescape(tweet['text'])
-            expanded_text = expanded_text.split(' ')
-            expanded_text = [
-                CONTRACTIONS[word] if word in CONTRACTIONS else word for word in expanded_text
-                ]
-            expanded_text = ' '.join(expanded_text)
+            expanded_text = TweetDetailExtractor.get_parseable_tweet_text(tweet)
             features['text'][i] = expanded_text
 
             # Stem, and remove stop words
