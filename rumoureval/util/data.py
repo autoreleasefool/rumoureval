@@ -287,7 +287,7 @@ def import_data(datasource):
     return parsed_tweets
 
 
-def output_data_by_class(tweets, annotations):
+def output_data_by_class(tweets, annotations, prefix=None):
     """Output files for each annotation, containing all the tweets similarly annotated.
 
     :param tweets:
@@ -298,6 +298,10 @@ def output_data_by_class(tweets, annotations):
         tweet IDs mapped to their annotations
     :type annotations:
         `dict`
+    :param prefix:
+        prefix for filenames
+    :type prefix:
+        `str` or None
     """
     sorted_tweets = {}
     for tweet in tweets:
@@ -308,6 +312,7 @@ def output_data_by_class(tweets, annotations):
 
     os.makedirs(get_output_path(), exist_ok=True)
     for annotation in sorted_tweets:
-        with open(os.path.join(get_output_path(), '{}.json'.format(annotation)), 'w') as file:
+        filename = ('{0}_{1}.json' if prefix is not None else '{1}.json').format(prefix, annotation)
+        with open(os.path.join(get_output_path(), filename), 'w') as file:
             json.dump(sorted_tweets[annotation], file, sort_keys=True, indent=2)
 

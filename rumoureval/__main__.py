@@ -46,16 +46,14 @@ def main(args=None):
     train_annotations = import_annotation_data('train')
     eval_annotations = import_annotation_data(eval_datasource)
 
-    # Output tweets sorted by class
-    if parsed_args.osorted:
-        output_data_by_class(tweets_train, train_annotations[0])
-
     # Get the root tweets for each dataset for veracity prediction
     root_tweets_train = [x for x in tweets_train if x.is_source]
     root_tweets_eval = [x for x in tweets_eval if x.is_source]
 
     # Output tweets sorted by class
     if parsed_args.osorted:
+        output_data_by_class(tweets_train, train_annotations[0])
+        output_data_by_class(root_tweets_train, train_annotations[0], prefix='root')
         output_data_by_class(root_tweets_train, train_annotations[1])
 
     # Perform sdqc task
