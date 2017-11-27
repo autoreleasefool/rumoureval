@@ -6,7 +6,7 @@ from sklearn import metrics
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import SVC
 from sklearn.pipeline import FeatureUnion, Pipeline
 from ..pipeline.item_selector import ItemSelector
 from ..pipeline.feature_counter import FeatureCounter
@@ -106,7 +106,242 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     tweets_train = filter_tweets(tweets_train)
 
     LOGGER.info('Initializing pipeline')
-    pipeline = Pipeline([
+
+    LOGGER.debug('Deny pipeline')
+    deny_pipeline = build_deny_pipeline()
+    deny_annotations = generate_one_vs_rest_annotations(train_annotations, 'deny')
+    eval_annotations_deny = generate_one_vs_rest_annotations(eval_annotations, 'deny')
+    LOGGER.info(deny_pipeline)
+
+    LOGGER.debug('Query pipeline')
+    query_pipeline = build_query_pipeline()
+    query_annotations = generate_one_vs_rest_annotations(train_annotations, 'query')
+    eval_annotations_query = generate_one_vs_rest_annotations(eval_annotations, 'query')
+    LOGGER.info(query_pipeline)
+
+    LOGGER.debug('Base pipeline')
+    base_pipeline = build_base_pipeline()
+    LOGGER.info(base_pipeline)
+
+    y_train_base = [train_annotations[x['id_str']] for x in tweets_train]
+    y_train_deny = [deny_annotations[x['id_str']] for x in tweets_train]
+    y_train_query = [query_annotations[x['id_str']] for x in tweets_train]
+    y_eval_base = [eval_annotations[x['id_str']] for x in tweets_eval]
+    y_eval_deny = [eval_annotations_deny[x['id_str']] for x in tweets_eval]
+    y_eval_query = [eval_annotations_query[x['id_str']] for x in tweets_eval]
+
+    LOGGER.info('Beginning training')
+
+    # Training on tweets_train
+    start_time = time()
+
+    LOGGER.info('Training base')
+    base_pipeline.fit(tweets_train, y_train_base)
+
+    LOGGER.info('Training deny')
+    deny_pipeline.fit(tweets_train, y_train_deny)
+
+    LOGGER.info('Training query')
+    query_pipeline.fit(tweets_train, y_train_query)
+
+    LOGGER.info("")
+    LOGGER.debug("train time: %0.3fs", time() - start_time)
+
+    LOGGER.info('Beginning evaluation')
+
+    # Predicting classes for tweets_eval
+    start_time = time()
+    base_predictions = base_pipeline.predict(tweets_eval)
+    deny_predictions = deny_pipeline.predict(tweets_eval)
+    query_predictions = query_pipeline.predict(tweets_eval)
+
+    predictions = []
+    for i in range(len(base_predictions)):
+        if query_predictions[i] == 'query':
+            predictions.append('query')
+        # elif deny_predictions[i] == 'deny':
+        #     predictions.append('deny')
+        else:
+            predictions.append(base_predictions[i])
+
+    LOGGER.debug("eval time:  %0.3fs", time() - start_time)
+    LOGGER.info('Completed SDQC Task (Task A). Printing results')
+
+    # Outputting classifier results
+    LOGGER.info("deny_accuracy:    %0.3f", metrics.accuracy_score(y_eval_deny, deny_predictions))
+    LOGGER.info("query_accuracy:   %0.3f", metrics.accuracy_score(y_eval_query, query_predictions))
+    LOGGER.info("base accuracy:    %0.3f", metrics.accuracy_score(y_eval_base, base_predictions))
+    LOGGER.info("accuracy:         %0.3f", metrics.accuracy_score(y_eval_base, predictions))
+    LOGGER.info("classification report:")
+    LOGGER.info(metrics.classification_report(y_eval_deny, deny_predictions, target_names=['deny', 'not_deny']))
+    LOGGER.info(metrics.classification_report(y_eval_query, query_predictions, target_names=['not_query', 'query']))
+    LOGGER.info(metrics.classification_report(y_eval_base, base_predictions, target_names=CLASSES))
+    LOGGER.info(metrics.classification_report(y_eval_base, predictions, target_names=CLASSES))
+    LOGGER.info("confusion matrix (deny):")
+    LOGGER.info(metrics.confusion_matrix(y_eval_deny, deny_predictions))
+    LOGGER.info("confusion matrix (query):")
+    LOGGER.info(metrics.confusion_matrix(y_eval_query, query_predictions))
+    LOGGER.info("confusion matrix (base):")
+    LOGGER.info(metrics.confusion_matrix(y_eval_base, base_predictions))
+    LOGGER.info("confusion matrix (combined):")
+    LOGGER.info(metrics.confusion_matrix(y_eval_base, predictions))
+
+    # Uncomment to see vocabulary
+    # LOGGER.info(pipeline.get_params()['union__tweet_text__count'].get_feature_names())
+
+    # Convert results to dict of tweet ID to predicted class
+    results = {}
+    for (i, prediction) in enumerate(predictions):
+        results[tweets_eval[i]['id_str']] = prediction
+
+    return results
+
+
+def generate_one_vs_rest_annotations(annotations, one):
+    """Convert annotation labels into a set of class vs not class.
+
+    :param annotations:
+        set of annotations for tweet IDs
+    :type annotations
+        `dict`
+    :param one:
+        the one annotation vs rest
+    :type one:
+        `str`
+    """
+    one_vs_rest_annotations = {}
+    for tweet_id in annotations:
+        one_vs_rest_annotations[tweet_id] = \
+                annotations[tweet_id] if annotations[tweet_id] == one else 'not_{}'.format(one)
+    return one_vs_rest_annotations
+
+
+def build_query_pipeline():
+    """Build a pipeline for predicting if a tweet is classified as query or not."""
+    return Pipeline([
+        # Extract useful features from tweets
+        ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
+
+        # Combine processing of features
+        ('union', FeatureUnion(
+            transformer_list=[
+
+                ('count_depth', Pipeline([
+                    ('selector', ItemSelector(keys='depth')),
+                    ('count', FeatureCounter(names='depth')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('is_news', Pipeline([
+                    ('selector', ItemSelector(keys='is_news')),
+                    ('count', FeatureCounter(names='is_news')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('is_root', Pipeline([
+                    ('selector', ItemSelector(keys='is_root')),
+                    ('count', FeatureCounter(names='is_root')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count positive and negative words in the tweets
+                ('pos_neg_sentiment', Pipeline([
+                    ('selector', ItemSelector(keys=['positive_words', 'negative_words'])),
+                    ('count', FeatureCounter(names=['positive_words', 'negative_words'])),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count querying words in the tweets
+                ('querying_words', Pipeline([
+                    ('selector', ItemSelector(keys='querying_words')),
+                    ('count', FeatureCounter(names='querying_words')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+            ],
+
+            # Relative weights of transformations
+            transformer_weights={
+                'count_depth': 0.5,
+                'pos_neg_sentiment': 1.0,
+                'querying_words': 10.0,
+                'is_news': 10.0,
+                'is_root': 20.0,
+            },
+
+        )),
+
+        # Use a classifier on the result
+        ('classifier', SVC(kernel='linear', class_weight='balanced'))
+
+    ])
+
+
+def build_deny_pipeline():
+    """Build a pipeline for predicting if a tweet is classified as deny or not."""
+    return Pipeline([
+        # Extract useful features from tweets
+        ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
+
+        # Combine processing of features
+        ('union', FeatureUnion(
+            transformer_list=[
+
+                ('is_news', Pipeline([
+                    ('selector', ItemSelector(keys='is_news')),
+                    ('count', FeatureCounter(names='is_news')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('is_root', Pipeline([
+                    ('selector', ItemSelector(keys='is_root')),
+                    ('count', FeatureCounter(names='is_root')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count positive and negative words in the tweets
+                ('pos_neg_sentiment', Pipeline([
+                    ('selector', ItemSelector(keys=['positive_words', 'negative_words'])),
+                    ('count', FeatureCounter(names=['positive_words', 'negative_words'])),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count denying words in the tweets
+                ('denying_words', Pipeline([
+                    ('selector', ItemSelector(keys='denying_words')),
+                    ('count', FeatureCounter(names='denying_words')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count swear words and personal attacks
+                ('offensiveness', Pipeline([
+                    ('selector', ItemSelector(keys=['swear_words', 'personal_words'])),
+                    ('count', FeatureCounter(names=['swear_words', 'personal_words'])),
+                    ('vect', DictVectorizer()),
+                ])),
+
+            ],
+
+            # Relative weights of transformations
+            transformer_weights={
+                'pos_neg_sentiment': 1.0,
+                'denying_words': 20.0,
+                'offensiveness': 20.0,
+                'is_news': 10.0,
+                'is_root': 20.0,
+            },
+
+        )),
+
+        # Use a classifier on the result
+        ('classifier', SVC(kernel='linear', class_weight='balanced'))
+
+    ])
+
+
+def build_base_pipeline():
+    """Build a pipeline for predicting all 4 SDQC classes."""
+    return Pipeline([
         # Extract useful features from tweets
         ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
 
@@ -157,11 +392,11 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                     ('vect', DictVectorizer()),
                 ])),
 
-                # ('count_depth', Pipeline([
-                #     ('selector', ItemSelector(keys='depth')),
-                #     ('count', FeatureCounter(names='depth')),
-                #     ('vect', DictVectorizer()),
-                # ])),
+                ('count_depth', Pipeline([
+                    ('selector', ItemSelector(keys='depth')),
+                    ('count', FeatureCounter(names='depth')),
+                    ('vect', DictVectorizer()),
+                ])),
 
                 ('verified', Pipeline([
                     ('selector', ItemSelector(keys='verified')),
@@ -220,7 +455,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                 'count_periods': 0.25,
                 'count_question_marks': 0.25,
                 'count_exclamations': 0.25,
-                # 'count_depth': 0.5,
+                'count_depth': 0.5,
                 'verified': 0.5,
                 'pos_neg_sentiment': 1.0,
                 'denying_words': 20.0,
@@ -233,44 +468,6 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
         )),
 
         # Use a classifier on the result
-        ('classifier', MultinomialNB())
+        ('classifier', SVC(kernel='rbf'))
 
-        ])
-    LOGGER.info(pipeline)
-
-    y_train = [train_annotations[x['id_str']] for x in tweets_train]
-    y_eval = [eval_annotations[x['id_str']] for x in tweets_eval]
-
-    LOGGER.info('Beginning training')
-
-    # Training on tweets_train
-    start_time = time()
-    pipeline.fit(tweets_train, y_train)
-    LOGGER.info("")
-    LOGGER.debug("train time: %0.3fs", time() - start_time)
-
-    LOGGER.info('Beginning evaluation')
-
-    # Predicting classes for tweets_eval
-    start_time = time()
-    predictions = pipeline.predict(tweets_eval)
-    LOGGER.debug("eval time:  %0.3fs", time() - start_time)
-
-    LOGGER.info('Completed SDQC Task (Task A). Printing results')
-
-    # Outputting classifier results
-    LOGGER.info("accuracy:   %0.3f", metrics.accuracy_score(y_eval, predictions))
-    LOGGER.info("classification report:")
-    LOGGER.info(metrics.classification_report(y_eval, predictions, target_names=CLASSES))
-    LOGGER.info("confusion matrix:")
-    LOGGER.info(metrics.confusion_matrix(y_eval, predictions))
-
-    # Uncomment to see vocabulary
-    # LOGGER.info(pipeline.get_params()['union__tweet_text__count'].get_feature_names())
-
-    # Convert results to dict of tweet ID to predicted class
-    results = {}
-    for (i, prediction) in enumerate(predictions):
-        results[tweets_eval[i]['id_str']] = prediction
-
-    return results
+    ])
