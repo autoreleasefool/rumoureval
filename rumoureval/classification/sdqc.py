@@ -2,8 +2,6 @@
 
 import logging
 from time import time
-from nltk.corpus import opinion_lexicon
-from nltk.stem.porter import PorterStemmer
 from sklearn import metrics
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
@@ -12,41 +10,12 @@ from sklearn.pipeline import FeatureUnion, Pipeline
 from ..pipeline.item_selector import ItemSelector
 from ..pipeline.feature_counter import FeatureCounter
 from ..pipeline.pipelinize import pipelinize
-from ..pipeline.sentimental_counter import SentimentalCounter
 from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
 from ..util.log import get_log_separator
 
 
 LOGGER = logging.getLogger()
 CLASSES = ['comment', 'deny', 'query', 'support']
-
-
-def get_sentimental_lexicons(stemmed=False):
-    """
-    Get words for sentiment analysis.
-
-    :param stemmed:
-        True to stem the lexicons before returning
-    :type stemmed:
-        `bool`
-    :rtype:
-        `dict`
-    """
-    sentiment_attributes = {
-        'positive': set(opinion_lexicon.positive()),
-        'negative': set(opinion_lexicon.negative()),
-    }
-
-    if not stemmed:
-        return sentiment_attributes
-
-    stemmer = PorterStemmer()
-    for sentiment in sentiment_attributes:
-        stemmed = set()
-        for word in sentiment_attributes[sentiment]:
-            stemmed.add(stemmer.stem(word))
-        sentiment_attributes[sentiment] = stemmed
-    return sentiment_attributes
 
 
 def list_to_str(lst):
@@ -89,13 +58,10 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     LOGGER.info(get_log_separator())
     LOGGER.info('Beginning SDQC Task (Task A)')
 
-    LOGGER.info('Retrieve stemmed corpus for later usage')
-    sentimental_lexicons = get_sentimental_lexicons(stemmed=True)
-
     LOGGER.info('Initializing pipeline')
     pipeline = Pipeline([
         # Extract useful features from tweets
-        ('extract_tweets', TweetDetailExtractor()),
+        ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
 
         # Combine processing of features
         ('union', FeatureUnion(
@@ -103,9 +69,9 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
 
                 # Count occurrences on tweet text
                 ('tweet_text', Pipeline([
-                    ('selector', ItemSelector(keys='text_stemmed')),
+                    ('selector', ItemSelector(keys='text_stemmed_stopped')),
                     ('list_to_str', pipelinize(list_to_str)),
-                    ('count', CountVectorizer(stop_words='english')),
+                    ('count', CountVectorizer()),
                 ])),
 
                 # Count numeric properties of the tweets
@@ -139,32 +105,31 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                     ('vect', DictVectorizer()),
                 ])),
 
-
-                # ('count', Pipeline([
-
-                #     ('selector', ItemSelector(keys=[
-                #         'hashtags',
-                #         'user_mentions',
-                #         'retweet_count',
-                #         'depth',
-                #         'verified',
-                #     ])),
-
-                #     ('count', FeatureCounter(names=[
-                #         'hashtags',
-                #         'user_mentions',
-                #         'retweet_count',
-                #         'depth',
-                #         'verified',
-                #     ])),
-
-                #     ('vect', DictVectorizer()),
-                # ])),
-
                 # Count positive and negative words in the tweets
-                ('sentiment', Pipeline([
-                    ('selector', ItemSelector(keys='text_stemmed')),
-                    ('count', SentimentalCounter(lexicons=sentimental_lexicons)),
+                ('pos_neg_sentiment', Pipeline([
+                    ('selector', ItemSelector(keys=['positive_words', 'negative_words'])),
+                    ('count', FeatureCounter(names=['positive_words', 'negative_words'])),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count denying words in the tweets
+                ('denying_words', Pipeline([
+                    ('selector', ItemSelector(keys='denying_words')),
+                    ('count', FeatureCounter(names='denying_words')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count querying words in the tweets
+                ('querying_words', Pipeline([
+                    ('selector', ItemSelector(keys='querying_words')),
+                    ('count', FeatureCounter(names='querying_words')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count swear words and personal attacks
+                ('offensiveness', Pipeline([
+                    ('selector', ItemSelector(keys=['swear_words', 'personal_words'])),
+                    ('count', FeatureCounter(names=['swear_words', 'personal_words'])),
                     ('vect', DictVectorizer()),
                 ])),
 
@@ -178,7 +143,10 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                 'count_retweets': 0.5,
                 'count_depth': 0.5,
                 'verified': 0.5,
-                'sentiment': 0.25,
+                'pos_neg_sentiment': 1.0,
+                'denying_words': 10.0,
+                'querying_words': 10.0,
+                'offensiveness': 10.0,
             },
 
         )),

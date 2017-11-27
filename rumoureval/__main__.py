@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-import nltk
 from .classification.sdqc import sdqc
 from .classification.veracity_prediction import veracity_prediction
 from .scoring.Scorer import Scorer
@@ -30,9 +29,6 @@ def main(args=None):
 
     # Setup logger
     logger = setup_logger(parsed_args.verbose)
-
-    # Download NLTK corpus
-    nltk.download('opinion_lexicon', quiet=True)
 
     ########################
     # Begin classification #
