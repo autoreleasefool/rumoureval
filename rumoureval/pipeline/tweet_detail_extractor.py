@@ -30,6 +30,29 @@ STEMMED_LEXICON = {
     'personal': frozenset([STEMMER.stem(word) for word in RACES_RELIGIONS_POLITICAL]),
 }
 
+# Cache tweet details constructed to save computation time for multiple pipelines
+TWEET_DETAIL_CACHE = {}
+
+# Set of tweet details and the kind of detail
+TWEET_DETAILS = [
+    ('text', str),
+    ('text_stemmed', list),
+    ('text_stemmed_stopped', list),
+    ('verified', bool),
+    ('hashtags', list),
+    ('user_mentions', list),
+    ('retweet_count', int),
+    ('depth', int),
+    ('is_news', int),
+    ('is_root', int),
+    ('positive_words', list),
+    ('negative_words', list),
+    ('querying_words', list),
+    ('denying_words', list),
+    ('swear_words', list),
+    ('personal_words', list),
+]
+
 
 class TweetDetailExtractor(BaseEstimator, TransformerMixin):
     """Extract relevant details from tweets."""
@@ -110,69 +133,63 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
             :class:`np.recarray`
         """
         features = np.recarray(shape=(len(tweets),),
-                               dtype=[('text', str),
-                                      ('text_stemmed', list),
-                                      ('text_stemmed_stopped', list),
-                                      ('verified', bool),
-                                      ('hashtags', list),
-                                      ('user_mentions', list),
-                                      ('retweet_count', int),
-                                      ('depth', int),
-                                      ('is_news', int),
-                                      ('is_root', int),
-                                      ('positive_words', list),
-                                      ('negative_words', list),
-                                      ('querying_words', list),
-                                      ('denying_words', list),
-                                      ('swear_words', list),
-                                      ('personal_words', list)])
+                               dtype=TWEET_DETAILS)
 
         for i, tweet in enumerate(tweets):
-            expanded_text = TweetDetailExtractor.get_parseable_tweet_text(tweet)
-            features['text'][i] = expanded_text
+            # Check if the details have been calculated before, and pull from cache if so
+            properties = {}
+            if tweet['id'] in TWEET_DETAIL_CACHE:
+                properties = TWEET_DETAIL_CACHE[tweet['id']]
+            else:
+                expanded_text = TweetDetailExtractor.get_parseable_tweet_text(tweet)
+                properties['text'] = expanded_text
 
-            # Stem, and remove stop words
-            stemmed = self._tokenize(expanded_text)
-            features['text_stemmed'][i] = stemmed
-            features['text_stemmed_stopped'][i] = [
-                w for w in stemmed if w not in STEMMED_STOP_WORDS
-                ]
+                # Stem, and remove stop words
+                stemmed = self._tokenize(expanded_text)
+                properties['text_stemmed'] = stemmed
+                properties['text_stemmed_stopped'] = [
+                    w for w in stemmed if w not in STEMMED_STOP_WORDS
+                    ]
 
-            # Basic features
-            features['verified'][i] = 1 if tweet['user']['verified'] else 0
-            features['hashtags'][i] = tweet['entities']['hashtags']
-            features['user_mentions'][i] = tweet['entities']['user_mentions']
-            features['retweet_count'][i] = tweet['retweet_count']
-            depth = 0
-            parent = tweet.parent()
-            while parent is not None:
-                depth += 1
-                parent = parent.parent()
-            features['depth'][i] = depth
+                # Basic features
+                properties['verified'] = 1 if tweet['user']['verified'] else 0
+                properties['hashtags'] = tweet['entities']['hashtags']
+                properties['user_mentions'] = tweet['entities']['user_mentions']
+                properties['retweet_count'] = tweet['retweet_count']
+                depth = 0
+                parent = tweet.parent()
+                while parent is not None:
+                    depth += 1
+                    parent = parent.parent()
+                properties['depth'] = depth
 
-            features['is_news'][i] = 1 if is_news(tweet['user']['screen_name']) else 0
-            features['is_root'][i] = 0 if depth == 0 else 1
+                properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
+                properties['is_root'] = 0 if depth == 0 else 1
 
-            # Sentiment analysis
-            features['positive_words'][i] = [
-                word for word in stemmed if word in STEMMED_LEXICON['positive']
-                ]
-            features['negative_words'][i] = [
-                word for word in stemmed if word in STEMMED_LEXICON['negative']
-                ]
-            features['querying_words'][i] = [
-                word for word in stemmed if word in STEMMED_LEXICON['querying']
-                ]
-            features['denying_words'][i] = [
-                word for word in stemmed if word in STEMMED_LEXICON['denying']
-                ]
-            features['swear_words'][i] = [
-                word for word in stemmed if word in STEMMED_LEXICON['swear']
-                ]
-            features['personal_words'][i] = [
-                word for word in stemmed if word in STEMMED_LEXICON['personal']
-                ]
+                # Sentiment analysis
+                properties['positive_words'] = [
+                    word for word in stemmed if word in STEMMED_LEXICON['positive']
+                    ]
+                properties['negative_words'] = [
+                    word for word in stemmed if word in STEMMED_LEXICON['negative']
+                    ]
+                properties['querying_words'] = [
+                    word for word in stemmed if word in STEMMED_LEXICON['querying']
+                    ]
+                properties['denying_words'] = [
+                    word for word in stemmed if word in STEMMED_LEXICON['denying']
+                    ]
+                properties['swear_words'] = [
+                    word for word in stemmed if word in STEMMED_LEXICON['swear']
+                    ]
+                properties['personal_words'] = [
+                    word for word in stemmed if word in STEMMED_LEXICON['personal']
+                    ]
 
+            for detail in TWEET_DETAILS:
+                features[detail[0]][i] = properties[detail[0]]
 
+            # Cache the generated details for the tweet
+            TWEET_DETAIL_CACHE[tweet['id']] = properties
 
         return features
