@@ -145,23 +145,23 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
         estimator=base_pipeline,
         param_grid={
             'union__transformer_weights': list(dict_product({
-                'tweet_text': [0.5, 1.0, 2.0],
+                'tweet_text': [1.0],
 
-                'verified': [0.25, 0.5, 1.0],
+                'verified': [0.5],
                 'is_news': [1.0, 5.0, 10.0, 20.0],
                 'is_root': [1.0, 5.0, 10.0, 20.0],
 
-                'count_periods': [0.25, 0.5, 1.0],
-                'count_question_marks': [0.25, 0.5, 1.0],
-                'count_exclamations': [0.25, 0.5, 1.0],
-                'count_chars': [0.25, 0.5, 1.0],
+                'count_periods': [0.5],
+                'count_question_marks': [0.5],
+                'count_exclamations': [0.5],
+                'count_chars': [0.5],
 
-                'count_hashtags': [0.25, 0.5, 1.0],
-                'count_mentions': [0.25, 0.5, 1.0],
-                'count_retweets': [0.25, 0.5, 1.0],
-                'count_depth': [0.25, 0.5, 1.0],
+                'count_hashtags': [0.5],
+                'count_mentions': [0.5],
+                'count_retweets': [0.5],
+                'count_depth': [0.5],
 
-                'pos_neg_sentiment': [0.5, 1.0, 2.0],
+                'pos_neg_sentiment': [1.0],
                 'denying_words': [1.0, 5.0, 10.0, 20.0],
                 'querying_words': [1.0, 5.0, 10.0, 20.0],
                 'offensiveness': [1.0, 5.0, 10.0, 20.0],
@@ -170,7 +170,8 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
             'classifier__C': [1, 10, 100],
             'classifier__gamma': [0.001, 0.0001],
             'classifier__kernel': ['rbf', 'poly'],
-        }
+        },
+        n_jobs=36
     )
     base_grid.fit(tweets_train, y_train_base)
     LOGGER.info("base_grid training: %0.3fs", time() - start_time)
@@ -191,26 +192,27 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
         estimator=deny_pipeline,
         param_grid={
             'union__transformer_weights': list(dict_product({
-                'tweet_text': [1.0, 2.0, 5.0],
+                'tweet_text': [1.0],
 
                 'count_ellipsis': [2.5, 5.0, 10.0],
                 'count_question_marks': [2.5, 5.0, 10.0],
 
-                'count_depth': [0.5, 1.0, 2.0],
+                'count_depth': [1.0],
 
                 'is_news': [1.0, 2.5, 5.0],
                 'is_root': [1.0, 2.5, 5.0],
 
                 'pos_neg_sentiment': [0.5, 1.0, 2.0],
-                'denying_words': [1.0, 5.0, 10.0, 20.0],
-                'querying_words': [1.0, 5.0, 10.0, 20.0],
-                'offensiveness': [1.0, 5.0, 10.0, 20.0],
+                'denying_words': [1.0, 5.0, 10.0],
+                'querying_words': [1.0, 5.0, 10.0],
+                'offensiveness': [1.0, 5.0, 10.0],
 
             })),
             'classifier__C': [1, 10, 100],
             'classifier__kernel': ['linear'],
             'classifier__class_weight': ['balanced'],
-        }
+        },
+        n_jobs=36
     )
     deny_grid.fit(tweets_train, y_train_deny)
     LOGGER.info("deny_grid training: %0.3fs", time() - start_time)
@@ -229,12 +231,12 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
         estimator=query_pipeline,
         param_grid={
             'union__transformer_weights': list(dict_product({
-                'count_depth': [0.5, 1.0, 2.0],
+                'count_depth': [1.0],
 
                 'is_news': [1.0, 2.5, 5.0],
                 'is_root': [1.0, 2.5, 5.0],
 
-                'count_question_marks': [1.0, 5.0, 10.0],
+                'count_question_marks': [5.0],
 
                 'pos_neg_sentiment': [0.5, 1.0, 2.0],
                 'querying_words': [1.0, 5.0, 10.0],
@@ -243,7 +245,8 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
             'classifier__C': [1, 10, 100],
             'classifier__kernel': ['linear'],
             'classifier__class_weight': ['balanced'],
-        }
+        },
+        n_jobs=36
     )
     query_grid.fit(tweets_train, y_train_query)
     LOGGER.info("query_grid training: %0.3fs", time() - start_time)
