@@ -55,6 +55,7 @@ TWEET_DETAILS = [
     ('period_count', int),
     ('question_mark_count', int),
     ('exclamation_count', int),
+    ('char_count', int),
 ]
 
 
@@ -193,6 +194,8 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 properties['period_count'] = punc_count['pe']
                 properties['question_mark_count'] = punc_count['qu']
                 properties['exclamation_count'] = punc_count['ex']
+
+                properties['char_count'] = len(tweet['text']) - tweet['text'].count(' ')
 
                 properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
                 properties['is_root'] = 0 if depth == 0 else 1

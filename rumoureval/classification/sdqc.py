@@ -157,6 +157,12 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                     ('vect', DictVectorizer()),
                 ])),
 
+                ('count_chars', Pipeline([
+                    ('selector', ItemSelector(keys='char_count')),
+                    ('count', FeatureCounter(names='char_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
                 # ('count_depth', Pipeline([
                 #     ('selector', ItemSelector(keys='depth')),
                 #     ('count', FeatureCounter(names='depth')),
@@ -220,6 +226,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
                 'count_periods': 0.25,
                 'count_question_marks': 0.25,
                 'count_exclamations': 0.25,
+                'count_chars': 0.5,
                 # 'count_depth': 0.5,
                 'verified': 0.5,
                 'pos_neg_sentiment': 1.0,
