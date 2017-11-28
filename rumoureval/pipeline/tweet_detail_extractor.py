@@ -18,7 +18,7 @@ from ..corpus.stop_words import STOP_WORDS
 
 
 URLS_RE = re.compile(r"""(%s)""" % URLS, re.VERBOSE | re.I | re.UNICODE)
-PUNCTUATION_RE = re.compile(r'(\.)|(\?)|(\!)')
+PUNCTUATION_RE = re.compile(r'(\.)|(\?)|(\!)|(\.\.\.)')
 
 STEMMER = PorterStemmer()
 STEMMED_STOP_WORDS = frozenset([STEMMER.stem(word) for word in STOP_WORDS])
@@ -55,6 +55,9 @@ TWEET_DETAILS = [
     ('period_count', int),
     ('question_mark_count', int),
     ('exclamation_count', int),
+    ('character_count', int),
+    ('ellipsis_count', int),
+    ('text_minus_root', list),
 ]
 
 
@@ -81,6 +84,9 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
             `str`
         """
         # Expanding tweet text for better accuracy
+        if tweet['id'] in TWEET_DETAIL_CACHE:
+            return TWEET_DETAIL_CACHE[tweet['id']]['text']
+
         expanded_text = tweet['text'].encode('ascii', 'ignore').decode('ascii')
         expanded_text = unescape(expanded_text)
         expanded_text = expanded_text.split(' ')
@@ -124,13 +130,21 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
 
     def _count_punctuation(self, tweet):
         """
-            Count the number of punctuations. Unfortunately, since I'm using regex, the ordering matters because
-            of the grouping order
+        Count the number of punctuations. Unfortunately, since I'm using regex, the ordering matters because
+        of the grouping order
+
+        :param tweet:
+            tweet body
+        :type tweet:
+            `str`
+        :rtype:
+            `dict`
         """
         res = {
             'pe': 0,
             'qu': 0,
-            'ex': 0
+            'ex': 0,
+            'el': 0,
         }
 
         for match_group in PUNCTUATION_RE.findall(tweet):
@@ -140,6 +154,8 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 res['qu'] += 1
             if match_group[2]:
                 res['ex'] += 1
+            if match_group[3]:
+                res['el'] += 1
 
         return res
 
@@ -181,21 +197,29 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 properties['hashtags'] = tweet['entities']['hashtags']
                 properties['user_mentions'] = tweet['entities']['user_mentions']
                 properties['retweet_count'] = tweet['retweet_count']
+
                 depth = 0
-                parent = tweet.parent()
-                while parent is not None:
+                root = tweet
+                while root.parent() is not None:
                     depth += 1
-                    parent = parent.parent()
+                    root = root.parent()
                 properties['depth'] = depth
+
+                properties['text_minus_root'] = list(
+                    set(properties['text_stemmed_stopped']) -
+                    set(self._tokenize(TweetDetailExtractor.get_parseable_tweet_text(root)))
+                )
+
+                properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
+                properties['is_root'] = 0 if depth == 0 else 1
 
                 # Count the punctuations
                 punc_count = self._count_punctuation(tweet['text'])
                 properties['period_count'] = punc_count['pe']
                 properties['question_mark_count'] = punc_count['qu']
                 properties['exclamation_count'] = punc_count['ex']
-
-                properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
-                properties['is_root'] = 0 if depth == 0 else 1
+                properties['ellipsis_count'] = punc_count['el']
+                properties['character_count'] = len(tweet['text']) - tweet['text'].count(' ')
 
                 # Sentiment analysis
                 properties['positive_words'] = [

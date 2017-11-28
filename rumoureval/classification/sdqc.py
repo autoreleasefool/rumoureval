@@ -4,7 +4,7 @@ import logging
 from time import time
 from sklearn import metrics
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.svm import SVC
 from sklearn.pipeline import FeatureUnion, Pipeline
@@ -155,6 +155,44 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     deny_predictions = deny_pipeline.predict(tweets_eval)
     query_predictions = query_pipeline.predict(tweets_eval)
 
+    print('============================================================')
+    print('|                                                          |')
+    print('|                  Misclassified - query                   |')
+    print('|                                                          |')
+    print('============================================================')
+
+    # Print misclassified query vs not_query
+    for i, prediction in enumerate(query_predictions):
+        if (prediction == 'query' and y_eval_base[i] != 'query') or (prediction == 'not_query' and y_eval_base[i] == 'query'):
+            root = tweets_eval[i]
+            while root.parent() != None:
+                root = root.parent()
+            print('{}\t{}\t{}\n\t\t{}'.format(
+                y_eval_base[i],
+                prediction,
+                TweetDetailExtractor.get_parseable_tweet_text(tweets_eval[i]),
+                TweetDetailExtractor.get_parseable_tweet_text(root)
+                ))
+
+    print('============================================================')
+    print('|                                                          |')
+    print('|                  Misclassified - deny                    |')
+    print('|                                                          |')
+    print('============================================================')
+
+    # Print misclassified deny vs not_deny
+    for i, prediction in enumerate(deny_predictions):
+        if (prediction == 'deny' and y_eval_base[i] != 'deny') or (prediction == 'not_deny' and y_eval_base[i] == 'deny'):
+            root = tweets_eval[i]
+            while root.parent() != None:
+                root = root.parent()
+            print('{}\t{}\t{}\n\t\t{}'.format(
+                y_eval_base[i],
+                prediction,
+                TweetDetailExtractor.get_parseable_tweet_text(tweets_eval[i]),
+                TweetDetailExtractor.get_parseable_tweet_text(root)
+                ))
+
     predictions = []
     for i in range(len(base_predictions)):
         if query_predictions[i] == 'query':
@@ -258,15 +296,23 @@ def build_query_pipeline():
                     ('vect', DictVectorizer()),
                 ])),
 
+                # Count number of question marks
+                ('count_question_marks', Pipeline([
+                    ('selector', ItemSelector(keys='question_mark_count')),
+                    ('count', FeatureCounter(names='question_mark_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
             ],
 
             # Relative weights of transformations
             transformer_weights={
-                'count_depth': 0.5,
+                'question_mark_count': 5.0,
+                'count_depth': 1.0,
                 'pos_neg_sentiment': 1.0,
-                'querying_words': 10.0,
-                'is_news': 10.0,
-                'is_root': 20.0,
+                'querying_words': 5.0,
+                'is_news': 2.5,
+                'is_root': 2.5,
             },
 
         )),
@@ -287,120 +333,29 @@ def build_deny_pipeline():
         ('union', FeatureUnion(
             transformer_list=[
 
-                ('is_news', Pipeline([
-                    ('selector', ItemSelector(keys='is_news')),
-                    ('count', FeatureCounter(names='is_news')),
+                ('count_ellipsis', Pipeline([
+                    ('selector', ItemSelector(keys='ellipsis_count')),
+                    ('count', FeatureCounter(names='ellipsis_count')),
                     ('vect', DictVectorizer()),
                 ])),
 
-                ('is_root', Pipeline([
-                    ('selector', ItemSelector(keys='is_root')),
-                    ('count', FeatureCounter(names='is_root')),
-                    ('vect', DictVectorizer()),
-                ])),
-
-                # Count positive and negative words in the tweets
-                ('pos_neg_sentiment', Pipeline([
-                    ('selector', ItemSelector(keys=['positive_words', 'negative_words'])),
-                    ('count', FeatureCounter(names=['positive_words', 'negative_words'])),
-                    ('vect', DictVectorizer()),
-                ])),
-
-                # Count denying words in the tweets
-                ('denying_words', Pipeline([
-                    ('selector', ItemSelector(keys='denying_words')),
-                    ('count', FeatureCounter(names='denying_words')),
-                    ('vect', DictVectorizer()),
-                ])),
-
-                # Count swear words and personal attacks
-                ('offensiveness', Pipeline([
-                    ('selector', ItemSelector(keys=['swear_words', 'personal_words'])),
-                    ('count', FeatureCounter(names=['swear_words', 'personal_words'])),
-                    ('vect', DictVectorizer()),
-                ])),
-
-            ],
-
-            # Relative weights of transformations
-            transformer_weights={
-                'pos_neg_sentiment': 1.0,
-                'denying_words': 20.0,
-                'offensiveness': 20.0,
-                'is_news': 10.0,
-                'is_root': 20.0,
-            },
-
-        )),
-
-        # Use a classifier on the result
-        ('classifier', SVC(kernel='linear', class_weight='balanced'))
-
-    ])
-
-
-def build_base_pipeline():
-    """Build a pipeline for predicting all 4 SDQC classes."""
-    return Pipeline([
-        # Extract useful features from tweets
-        ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
-
-        # Combine processing of features
-        ('union', FeatureUnion(
-            transformer_list=[
-
-                # Count occurrences on tweet text
-                ('tweet_text', Pipeline([
-                    ('selector', ItemSelector(keys='text_stemmed_stopped')),
-                    ('list_to_str', pipelinize(list_to_str)),
-                    ('count', CountVectorizer()),
-                ])),
-
-                # Count numeric properties of the tweets
-                ('count_hashtags', Pipeline([
-                    ('selector', ItemSelector(keys='hashtags')),
-                    ('count', FeatureCounter(names='hashtags')),
-                    ('vect', DictVectorizer()),
-                ])),
-
-                ('count_mentions', Pipeline([
-                    ('selector', ItemSelector(keys='user_mentions')),
-                    ('count', FeatureCounter(names='user_mentions')),
-                    ('vect', DictVectorizer()),
-                ])),
-
-                ('count_retweets', Pipeline([
-                    ('selector', ItemSelector(keys='retweet_count')),
-                    ('count', FeatureCounter(names='retweet_count')),
-                    ('vect', DictVectorizer()),
-                ])),
-
-                # Punctuation
-                ('count_periods', Pipeline([
-                    ('selector', ItemSelector(keys='period_count')),
-                    ('count', FeatureCounter(names='period_count')),
-                    ('vect', DictVectorizer()),
-                ])),
+                # Count number of question marks
                 ('count_question_marks', Pipeline([
                     ('selector', ItemSelector(keys='question_mark_count')),
                     ('count', FeatureCounter(names='question_mark_count')),
                     ('vect', DictVectorizer()),
                 ])),
-                ('count_exclamations', Pipeline([
-                    ('selector', ItemSelector(keys='exclamation_count')),
-                    ('count', FeatureCounter(names='exclamation_count')),
-                    ('vect', DictVectorizer()),
+
+                # Count occurrences on tweet text
+                ('tweet_text', Pipeline([
+                    ('selector', ItemSelector(keys='text_minus_root')),
+                    ('list_to_str', pipelinize(list_to_str)),
+                    ('count', TfidfVectorizer()),
                 ])),
 
                 ('count_depth', Pipeline([
                     ('selector', ItemSelector(keys='depth')),
                     ('count', FeatureCounter(names='depth')),
-                    ('vect', DictVectorizer()),
-                ])),
-
-                ('verified', Pipeline([
-                    ('selector', ItemSelector(keys='verified')),
-                    ('count', FeatureCounter(names='verified')),
                     ('vect', DictVectorizer()),
                 ])),
 
@@ -448,6 +403,162 @@ def build_base_pipeline():
 
             # Relative weights of transformations
             transformer_weights={
+                # 'count_depth': 1.0,
+                # 'pos_neg_sentiment': 1.0,
+                # 'denying_words': 10.0,
+                # 'offensiveness': 10.0,
+                # 'is_news': 2.5,
+                # 'is_root': 2.5,
+
+                'count_ellipsis': 5.0,
+                'tweet_text': 2.0,
+                'count_depth': 1.0,
+                'pos_neg_sentiment': 1.0,
+                'denying_words': 5.0,
+                'offensiveness': 10.0,
+                'is_news': 2.5,
+                'is_root': 2.5,
+
+                'question_mark_count': 5.0,
+                # 'count_depth': 1.0,
+                # 'pos_neg_sentiment': 1.0,
+                'querying_words': 5.0,
+                # 'is_news': 2.5,
+                # 'is_root': 2.5,
+            },
+
+        )),
+
+        # Use a classifier on the result
+        ('classifier', SVC(kernel='linear', class_weight='balanced'))
+
+    ])
+
+
+def build_base_pipeline():
+    """Build a pipeline for predicting all 4 SDQC classes."""
+    return Pipeline([
+        # Extract useful features from tweets
+        ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
+
+        # Combine processing of features
+        ('union', FeatureUnion(
+            transformer_list=[
+
+                # Count occurrences on tweet text
+                ('tweet_text', Pipeline([
+                    ('selector', ItemSelector(keys='text_stemmed_stopped')),
+                    ('list_to_str', pipelinize(list_to_str)),
+                    ('count', TfidfVectorizer()),
+                ])),
+
+                # Punctuation
+                ('count_periods', Pipeline([
+                    ('selector', ItemSelector(keys='period_count')),
+                    ('count', FeatureCounter(names='period_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('count_characters', Pipeline([
+                    ('selector', ItemSelector(keys='character_count')),
+                    ('count', FeatureCounter(names='character_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('count_question_marks', Pipeline([
+                    ('selector', ItemSelector(keys='question_mark_count')),
+                    ('count', FeatureCounter(names='question_mark_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('count_exclamations', Pipeline([
+                    ('selector', ItemSelector(keys='exclamation_count')),
+                    ('count', FeatureCounter(names='exclamation_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # ('count_ellipsis', Pipeline([
+                #     ('selector', ItemSelector(keys='ellipsis_count')),
+                #     ('count', FeatureCounter(names='ellipsis_count')),
+                #     ('vect', DictVectorizer()),
+                # ])),
+
+                # Count features
+                # ('count_depth', Pipeline([
+                #     ('selector', ItemSelector(keys='depth')),
+                #     ('count', FeatureCounter(names='depth')),
+                #     ('vect', DictVectorizer()),
+                # ])),
+
+                ('count_hashtags', Pipeline([
+                    ('selector', ItemSelector(keys='hashtags')),
+                    ('count', FeatureCounter(names='hashtags')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('count_mentions', Pipeline([
+                    ('selector', ItemSelector(keys='user_mentions')),
+                    ('count', FeatureCounter(names='user_mentions')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('count_retweets', Pipeline([
+                    ('selector', ItemSelector(keys='retweet_count')),
+                    ('count', FeatureCounter(names='retweet_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Boolean features
+                ('is_news', Pipeline([
+                    ('selector', ItemSelector(keys='is_news')),
+                    ('count', FeatureCounter(names='is_news')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('is_root', Pipeline([
+                    ('selector', ItemSelector(keys='is_root')),
+                    ('count', FeatureCounter(names='is_root')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('verified', Pipeline([
+                    ('selector', ItemSelector(keys='verified')),
+                    ('count', FeatureCounter(names='verified')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count positive and negative words in the tweets
+                ('pos_neg_sentiment', Pipeline([
+                    ('selector', ItemSelector(keys=['positive_words', 'negative_words'])),
+                    ('count', FeatureCounter(names=['positive_words', 'negative_words'])),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count denying words in the tweets
+                ('denying_words', Pipeline([
+                    ('selector', ItemSelector(keys='denying_words')),
+                    ('count', FeatureCounter(names='denying_words')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count querying words in the tweets
+                ('querying_words', Pipeline([
+                    ('selector', ItemSelector(keys='querying_words')),
+                    ('count', FeatureCounter(names='querying_words')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count swear words and personal attacks
+                ('offensiveness', Pipeline([
+                    ('selector', ItemSelector(keys=['swear_words', 'personal_words'])),
+                    ('count', FeatureCounter(names=['swear_words', 'personal_words'])),
+                    ('vect', DictVectorizer()),
+                ])),
+
+            ],
+
+            # Relative weights of transformations
+            transformer_weights={
                 'tweet_text': 1.0,
                 'count_hashtags': 0.5,
                 'count_mentions': 0.5,
@@ -455,7 +566,9 @@ def build_base_pipeline():
                 'count_periods': 0.25,
                 'count_question_marks': 0.25,
                 'count_exclamations': 0.25,
-                'count_depth': 0.5,
+                'count_characters': 0.5,
+                # 'count_ellipsis': 0.25,
+                # 'count_depth': 0.5,
                 'verified': 0.5,
                 'pos_neg_sentiment': 1.0,
                 'denying_words': 20.0,
