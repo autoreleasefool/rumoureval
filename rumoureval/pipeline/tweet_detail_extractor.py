@@ -18,6 +18,7 @@ from ..corpus.stop_words import STOP_WORDS
 
 
 URLS_RE = re.compile(r"""(%s)""" % URLS, re.VERBOSE | re.I | re.UNICODE)
+PUNCTUATION_RE = re.compile(r'(\.)|(\?)|(\!)')
 
 STEMMER = PorterStemmer()
 STEMMED_STOP_WORDS = frozenset([STEMMER.stem(word) for word in STOP_WORDS])
@@ -51,6 +52,9 @@ TWEET_DETAILS = [
     ('denying_words', list),
     ('swear_words', list),
     ('personal_words', list),
+    ('period_count', int),
+    ('question_mark_count', int),
+    ('exclamation_count', int),
 ]
 
 
@@ -118,6 +122,27 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
         return list(self._stem([
             token for token in self._tokenizer.tokenize(tweet) if not URLS_RE.match(token)]))
 
+    def _count_punctuation(self, tweet):
+        """
+            Count the number of punctuations. Unfortunately, since I'm using regex, the ordering matters because
+            of the grouping order
+        """
+        res = {
+            'pe': 0,
+            'qu': 0,
+            'ex': 0
+        }
+
+        for match_group in PUNCTUATION_RE.findall(tweet):
+            if match_group[0]:
+                res['pe'] += 1
+            if match_group[1]:
+                res['qu'] += 1
+            if match_group[2]:
+                res['ex'] += 1
+
+        return res
+
     def fit(self, x, y=None):
         """Fit to data."""
         return self
@@ -162,6 +187,12 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                     depth += 1
                     parent = parent.parent()
                 properties['depth'] = depth
+
+                # Count the punctuations
+                punc_count = self._count_punctuation(tweet['text'])
+                properties['period_count'] = punc_count['pe']
+                properties['question_mark_count'] = punc_count['qu']
+                properties['exclamation_count'] = punc_count['ex']
 
                 properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
                 properties['is_root'] = 0 if depth == 0 else 1
