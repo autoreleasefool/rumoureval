@@ -55,9 +55,9 @@ TWEET_DETAILS = [
     ('period_count', int),
     ('question_mark_count', int),
     ('exclamation_count', int),
-    ('character_count', int),
     ('ellipsis_count', int),
     ('text_minus_root', list),
+    ('char_count', int),
 ]
 
 
@@ -219,7 +219,11 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 properties['question_mark_count'] = punc_count['qu']
                 properties['exclamation_count'] = punc_count['ex']
                 properties['ellipsis_count'] = punc_count['el']
-                properties['character_count'] = len(tweet['text']) - tweet['text'].count(' ')
+
+                properties['char_count'] = len(tweet['text']) - tweet['text'].count(' ')
+
+                properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
+                properties['is_root'] = 0 if depth == 0 else 1
 
                 # Sentiment analysis
                 properties['positive_words'] = [

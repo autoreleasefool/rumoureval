@@ -459,12 +459,6 @@ def build_base_pipeline():
                     ('vect', DictVectorizer()),
                 ])),
 
-                ('count_characters', Pipeline([
-                    ('selector', ItemSelector(keys='character_count')),
-                    ('count', FeatureCounter(names='character_count')),
-                    ('vect', DictVectorizer()),
-                ])),
-
                 ('count_question_marks', Pipeline([
                     ('selector', ItemSelector(keys='question_mark_count')),
                     ('count', FeatureCounter(names='question_mark_count')),
@@ -484,6 +478,12 @@ def build_base_pipeline():
                 # ])),
 
                 # Count features
+                ('count_chars', Pipeline([
+                    ('selector', ItemSelector(keys='char_count')),
+                    ('count', FeatureCounter(names='char_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
                 # ('count_depth', Pipeline([
                 #     ('selector', ItemSelector(keys='depth')),
                 #     ('count', FeatureCounter(names='depth')),
@@ -566,8 +566,7 @@ def build_base_pipeline():
                 'count_periods': 0.25,
                 'count_question_marks': 0.25,
                 'count_exclamations': 0.25,
-                'count_characters': 0.5,
-                # 'count_ellipsis': 0.25,
+                'count_chars': 0.5,
                 # 'count_depth': 0.5,
                 'verified': 0.5,
                 'pos_neg_sentiment': 1.0,
