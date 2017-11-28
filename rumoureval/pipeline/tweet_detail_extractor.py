@@ -18,7 +18,7 @@ from ..corpus.stop_words import STOP_WORDS
 
 
 URLS_RE = re.compile(r"""(%s)""" % URLS, re.VERBOSE | re.I | re.UNICODE)
-PUNCTUATION_RE = re.compile(r'(\.)|(\?)|(\!)|(\.\.\.)')
+PUNCTUATION_RE = re.compile(r'(\.)|(\?)|(\!)|(\.\.\.)|( )')
 
 STEMMER = PorterStemmer()
 STEMMED_STOP_WORDS = frozenset([STEMMER.stem(word) for word in STOP_WORDS])
@@ -36,27 +36,36 @@ TWEET_DETAIL_CACHE = {}
 
 # Set of tweet details and the kind of detail
 TWEET_DETAILS = [
+    # Text properties
     ('text', str),
     ('text_stemmed', list),
     ('text_stemmed_stopped', list),
-    ('verified', bool),
-    ('hashtags', list),
-    ('user_mentions', list),
-    ('retweet_count', int),
-    ('depth', int),
+    ('text_minus_root', list),
+
+    # Boolean properties
+    ('verified', int),
     ('is_news', int),
     ('is_root', int),
+
+    # Basic features
+    ('hashtags', list),
+    ('user_mentions', list),
+    ('depth', int),
+    ('retweet_count', int),
+
+    # Sentimental analysis
     ('positive_words', list),
     ('negative_words', list),
     ('querying_words', list),
     ('denying_words', list),
     ('swear_words', list),
     ('personal_words', list),
+
+    # Punctuation
     ('period_count', int),
     ('question_mark_count', int),
     ('exclamation_count', int),
     ('ellipsis_count', int),
-    ('text_minus_root', list),
     ('char_count', int),
 ]
 
@@ -145,6 +154,7 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
             'qu': 0,
             'ex': 0,
             'el': 0,
+            'sp': 0,
         }
 
         for match_group in PUNCTUATION_RE.findall(tweet):
@@ -156,6 +166,8 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 res['ex'] += 1
             if match_group[3]:
                 res['el'] += 1
+            if match_group[4]:
+                res['sp'] += 1
 
         return res
 
@@ -193,11 +205,11 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                     ]
 
                 # Basic features
-                properties['verified'] = 1 if tweet['user']['verified'] else 0
                 properties['hashtags'] = tweet['entities']['hashtags']
                 properties['user_mentions'] = tweet['entities']['user_mentions']
                 properties['retweet_count'] = tweet['retweet_count']
 
+                # Get parent tweet
                 depth = 0
                 root = tweet
                 while root.parent() is not None:
@@ -205,22 +217,25 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                     root = root.parent()
                 properties['depth'] = depth
 
+                # Boolean properties
+                properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
+                properties['is_root'] = 1 if depth == 0 else 0
+                properties['verified'] = 1 if tweet['user']['verified'] else 0
+
                 properties['text_minus_root'] = list(
                     set(properties['text_stemmed_stopped']) -
                     set(self._tokenize(TweetDetailExtractor.get_parseable_tweet_text(root)))
                 )
 
-                properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
-                properties['is_root'] = 0 if depth == 0 else 1
-
                 # Count the punctuations
-                punc_count = self._count_punctuation(tweet['text'])
+                punc_count = self._count_punctuation(properties['text'])
                 properties['period_count'] = punc_count['pe']
                 properties['question_mark_count'] = punc_count['qu']
                 properties['exclamation_count'] = punc_count['ex']
                 properties['ellipsis_count'] = punc_count['el']
 
-                properties['char_count'] = len(tweet['text']) - tweet['text'].count(' ')
+                # Count the characters in the tweet, minus spaces
+                properties['char_count'] = len(properties['text']) - punc_count['sp']
 
                 properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
                 properties['is_root'] = 0 if depth == 0 else 1
