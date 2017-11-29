@@ -76,8 +76,12 @@ TWEET_DETAILS = [
     ('child_queries', int),
     ('child_comments', int),
     ('child_supports', int),
-]
 
+    # Percentage of sdq tweets
+    ('support_percentage', float),
+    ('denies_percentage', float),
+    ('queries_percentage', float),
+]
 
 class TweetDetailExtractor(BaseEstimator, TransformerMixin):
     """Extract relevant details from tweets."""
@@ -180,6 +184,13 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
             `str`
         :rtype:
             `dict`
+        """
+        """
+        pe = period
+        qu = question mark
+        ex = exclamation mart
+        el = ellipsis
+        sp = space
         """
         res = {
             'pe': 0,
@@ -305,11 +316,19 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                     properties['child_supports'] = len([
                         tweet for tweet in self._classifications if self._classifications[tweet] == 'support'
                     ])
+
+                    total_sdq_tweets = properties['child_supports'] + properties['child_denies'] + properties['child_queries']
+                    properties['support_percentage'] = properties['child_supports'] / total_sdq_tweets
+                    properties['denies_percentage'] = properties['child_denies'] / total_sdq_tweets
+                    properties['queries_percentage'] = properties['child_queries'] / total_sdq_tweets
                 else:
                     properties['child_denies'] = 0
                     properties['child_queries'] = 0
                     properties['child_comments'] = 0
                     properties['child_supports'] = 0
+                    properties['support_percentage'] = 0
+                    properties['denies_percentage'] = 0
+                    properties['queries_percentage'] = 0
 
             for detail in TWEET_DETAILS:
                 features[detail[0]][i] = properties[detail[0]]

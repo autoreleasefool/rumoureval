@@ -3,11 +3,15 @@
 import logging
 from time import time
 from sklearn import metrics
-from sklearn.feature_extraction.text import HashingVectorizer
-from sklearn.naive_bayes import BernoulliNB
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
 from sklearn.pipeline import FeatureUnion, Pipeline
 from ..pipeline.item_selector import ItemSelector
+from ..pipeline.feature_counter import FeatureCounter
 from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
+from ..pipeline.pipelinize import pipelinize
+from ..util.lists import list_to_str
 from ..util.log import get_log_separator
 
 
@@ -55,10 +59,28 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
         ('union', FeatureUnion(
             transformer_list=[
 
-                # Word occurrences on tweet text
+                 # Count occurrences on tweet text
                 ('tweet_text', Pipeline([
-                    ('selector', ItemSelector(keys='text')),
-                    ('count', HashingVectorizer(stop_words='english')),
+                    ('selector', ItemSelector(keys='text_stemmed_stopped')),
+                    ('list_to_str', pipelinize(list_to_str)),
+                    ('count', TfidfVectorizer()),
+                ])),
+
+                # Percentages of support, deny and query tweets
+                ('percentage_of_support', Pipeline([
+                    ('selector', ItemSelector(keys='support_percentage')),
+                    ('count', FeatureCounter(names='support_percentage')),
+                    ('vect', DictVectorizer()),
+                ])),
+                ('percentage_of_denies', Pipeline([
+                    ('selector', ItemSelector(keys='denies_percentage')),
+                    ('count', FeatureCounter(names='denies_percentage')),
+                    ('vect', DictVectorizer()),
+                ])),
+                ('percentage_of_queries', Pipeline([
+                    ('selector', ItemSelector(keys='queries_percentage')),
+                    ('count', FeatureCounter(names='queries_percentage')),
+                    ('vect', DictVectorizer()),
                 ])),
 
             ],
@@ -66,11 +88,15 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
             # Relative weights of transformations
             transformer_weights={
                 'tweet_text': 1.0,
+                'percentage_of_support': 1.0,
+                'percentage_of_denies': 1.0,
+                'percentage_of_queries': 1.0,
             },
         )),
 
         # Use a classifier on the result
-        ('classifier', BernoulliNB(alpha=0.1))
+        # ('classifier', BernoulliNB(alpha=0.1))
+        ('classifier', SVC(kernel='rbf'))
 
         ])
     LOGGER.info(pipeline)
