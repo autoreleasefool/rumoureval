@@ -1,8 +1,10 @@
 """Package for classifying tweets by Support, Deny, Query, or Comment (SDQC)."""
 
 import logging
+import os
 from time import time
 from sklearn import metrics
+from sklearn.externals import joblib
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -14,6 +16,7 @@ from ..pipeline.pipelinize import pipelinize
 from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
 from ..util.lists import list_to_str
 from ..util.log import get_log_separator
+from ..util.data import get_output_path
 
 
 LOGGER = logging.getLogger()
@@ -126,11 +129,19 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
 
     # Training on tweets_train
     start_time = time()
-    base_pipeline.fit(tweets_train, y_train_base)
+    if os.path.exists(os.path.join(get_output_path(), 'base_pipeline.pickle')):
+        base_pipeline = joblib.load(os.path.join(get_output_path(), 'base_pipeline.pickle'))
+    else:
+        base_pipeline.fit(tweets_train, y_train_base)
+        joblib.dump(base_pipeline, os.path.join(get_output_path(), 'base_pipeline.pickle'))
     LOGGER.info("base_pipeline training:  %0.3fs", time() - start_time)
 
     start_time = time()
-    query_pipeline.fit(tweets_train, y_train_query)
+    if os.path.exists(os.path.join(get_output_path(), 'query_pipeline.pickle')):
+        query_pipeline = joblib.load(os.path.join(get_output_path(), 'query_pipeline.pickle'))
+    else:
+        query_pipeline.fit(tweets_train, y_train_query)
+        joblib.dump(query_pipeline, os.path.join(get_output_path(), 'query_pipeline.pickle'))
     LOGGER.info("query_pipeline training: %0.3fs", time() - start_time)
 
     LOGGER.info("")
