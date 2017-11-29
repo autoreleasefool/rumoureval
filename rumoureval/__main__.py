@@ -62,7 +62,8 @@ def main(args=None):
     task_b_results = veracity_prediction(root_tweets_train,
                                          root_tweets_eval,
                                          train_annotations[1],
-                                         eval_annotations[1])
+                                         eval_annotations[1],
+                                         task_a_results)
 
     # Score tasks and output results
     task_a_scorer = Scorer('A', eval_datasource)

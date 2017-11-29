@@ -11,11 +11,11 @@ from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
 from ..util.log import get_log_separator
 
 
-CLASSES = ['true', 'false', 'unverified']
+CLASSES = ['false', 'true', 'unverified']
 LOGGER = logging.getLogger()
 
 
-def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annotations):
+def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annotations, task_a_results):
     """
     Predict the veracity of tweets.
 
@@ -35,6 +35,10 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
         veracity prediction task annotations for evaluation data
     :type eval_annotations:
         `list` of `str`
+    :param task_a_results:
+        classification results from task A
+    :type task_a_results:
+        `dict`
     :rtype:
         `dict`
     """
@@ -45,7 +49,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     LOGGER.info('Initializing pipeline')
     pipeline = Pipeline([
         # Extract useful features from tweets
-        ('extract_tweets', TweetDetailExtractor()),
+        ('extract_tweets', TweetDetailExtractor(task='B', strip_hashtags=False, strip_mentions=False, classifications=task_a_results)),
 
         # Combine processing of features
         ('union', FeatureUnion(

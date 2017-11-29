@@ -144,34 +144,33 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     base_grid = GridSearchCV(
         estimator=base_pipeline,
         param_grid={
-            'union__transformer_weights': list(dict_product({
-                'tweet_text': [1.0],
+            # 'union__transformer_weights': list(dict_product({
+            #     'tweet_text': [1.0],
 
-                'verified': [0.5],
-                'is_news': [1.0, 5.0, 10.0, 20.0],
-                'is_root': [1.0, 5.0, 10.0, 20.0],
+            #     'verified': [0.5],
+            #     'is_news': [1.0, 5.0, 10.0, 20.0],
+            #     'is_root': [1.0, 5.0, 10.0, 20.0],
 
-                'count_periods': [0.5],
-                'count_question_marks': [0.5],
-                'count_exclamations': [0.5],
-                'count_chars': [0.5],
+            #     'count_periods': [0.5],
+            #     'count_question_marks': [0.5],
+            #     'count_exclamations': [0.5],
+            #     'count_chars': [0.5],
 
-                'count_hashtags': [0.5],
-                'count_mentions': [0.5],
-                'count_retweets': [0.5],
-                'count_depth': [0.5],
+            #     'count_hashtags': [0.5],
+            #     'count_mentions': [0.5],
+            #     'count_retweets': [0.5],
+            #     'count_depth': [0.5],
 
-                'pos_neg_sentiment': [1.0],
-                'denying_words': [1.0, 5.0, 10.0, 20.0],
-                'querying_words': [1.0, 5.0, 10.0, 20.0],
-                'offensiveness': [1.0, 5.0, 10.0, 20.0],
+            #     'pos_neg_sentiment': [1.0],
+            #     'denying_words': [1.0, 5.0, 10.0, 20.0],
+            #     'querying_words': [1.0, 5.0, 10.0, 20.0],
+            #     'offensiveness': [1.0, 5.0, 10.0, 20.0],
 
-            })),
-            'classifier__C': [1, 10, 100],
-            'classifier__gamma': [0.001, 0.0001],
-            'classifier__kernel': ['rbf', 'poly'],
-        },
-        n_jobs=36
+            # })),
+            # 'classifier__C': [1, 10, 100],
+            # 'classifier__gamma': [0.001, 0.0001],
+            # 'classifier__kernel': ['rbf', 'poly'],
+        }
     )
     base_grid.fit(tweets_train, y_train_base)
     LOGGER.info("base_grid training: %0.3fs", time() - start_time)
@@ -191,28 +190,27 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     deny_grid = GridSearchCV(
         estimator=deny_pipeline,
         param_grid={
-            'union__transformer_weights': list(dict_product({
-                'tweet_text': [1.0],
+            # 'union__transformer_weights': list(dict_product({
+            #     'tweet_text': [1.0],
 
-                'count_ellipsis': [2.5, 5.0, 10.0],
-                'count_question_marks': [2.5, 5.0, 10.0],
+            #     'count_ellipsis': [2.5, 5.0, 10.0],
+            #     'count_question_marks': [2.5, 5.0, 10.0],
 
-                'count_depth': [1.0],
+            #     'count_depth': [1.0],
 
-                'is_news': [1.0, 2.5, 5.0],
-                'is_root': [1.0, 2.5, 5.0],
+            #     'is_news': [1.0, 2.5, 5.0],
+            #     'is_root': [1.0, 2.5, 5.0],
 
-                'pos_neg_sentiment': [0.5, 1.0, 2.0],
-                'denying_words': [1.0, 5.0, 10.0],
-                'querying_words': [1.0, 5.0, 10.0],
-                'offensiveness': [1.0, 5.0, 10.0],
+            #     'pos_neg_sentiment': [0.5, 1.0, 2.0],
+            #     'denying_words': [1.0, 5.0, 10.0],
+            #     'querying_words': [1.0, 5.0, 10.0],
+            #     'offensiveness': [1.0, 5.0, 10.0],
 
-            })),
-            'classifier__C': [1, 10, 100],
-            'classifier__kernel': ['linear'],
-            'classifier__class_weight': ['balanced'],
-        },
-        n_jobs=36
+            # })),
+            # 'classifier__C': [1, 10, 100],
+            # 'classifier__kernel': ['linear'],
+            # 'classifier__class_weight': ['balanced'],
+        }
     )
     deny_grid.fit(tweets_train, y_train_deny)
     LOGGER.info("deny_grid training: %0.3fs", time() - start_time)
@@ -230,23 +228,22 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     query_grid = GridSearchCV(
         estimator=query_pipeline,
         param_grid={
-            'union__transformer_weights': list(dict_product({
-                'count_depth': [1.0],
+            # 'union__transformer_weights': list(dict_product({
+            #     'count_depth': [1.0],
 
-                'is_news': [1.0, 2.5, 5.0],
-                'is_root': [1.0, 2.5, 5.0],
+            #     'is_news': [1.0, 2.5, 5.0],
+            #     'is_root': [1.0, 2.5, 5.0],
 
-                'count_question_marks': [5.0],
+            #     'count_question_marks': [5.0],
 
-                'pos_neg_sentiment': [0.5, 1.0, 2.0],
-                'querying_words': [1.0, 5.0, 10.0],
+            #     'pos_neg_sentiment': [0.5, 1.0, 2.0],
+            #     'querying_words': [1.0, 5.0, 10.0],
 
-            })),
-            'classifier__C': [1, 10, 100],
-            'classifier__kernel': ['linear'],
-            'classifier__class_weight': ['balanced'],
-        },
-        n_jobs=36
+            # })),
+            # 'classifier__C': [1, 10, 100],
+            # 'classifier__kernel': ['linear'],
+            # 'classifier__class_weight': ['balanced'],
+        }
     )
     query_grid.fit(tweets_train, y_train_query)
     LOGGER.info("query_grid training: %0.3fs", time() - start_time)
@@ -305,7 +302,9 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     predictions_wo_deny = []
     predictions_w_deny = []
     for i in range(len(base_predictions)):
-        if query_predictions[i] == 'query':
+        if base_predictions[i] == 'comment':
+            predictions_wo_deny.append('comment')
+        elif query_predictions[i] == 'query':
             predictions_wo_deny.append('query')
         else:
             predictions_wo_deny.append(base_predictions[i])
@@ -380,7 +379,7 @@ def build_query_pipeline():
     """Build a pipeline for predicting if a tweet is classified as query or not."""
     return Pipeline([
         # Extract useful features from tweets
-        ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
+        ('extract_tweets', TweetDetailExtractor(task='A', strip_hashtags=False, strip_mentions=False)),
 
         # Combine processing of features
         ('union', FeatureUnion(
@@ -433,19 +432,31 @@ def build_query_pipeline():
             transformer_weights={
                 'count_depth': 1.0,
 
-                'is_news': 2.5,
+                'is_news': 1.0,
                 'is_root': 2.5,
 
                 'count_question_marks': 5.0,
 
-                'pos_neg_sentiment': 1.0,
-                'querying_words': 5.0,
-            },
+                'pos_neg_sentiment': 0.5,
+                'querying_words': 1.0,
+            }
+
+
+            #     'count_depth': 1.0,
+
+            #     'is_news': 2.5,
+            #     'is_root': 2.5,
+
+            #     'count_question_marks': 5.0,
+
+            #     'pos_neg_sentiment': 1.0,
+            #     'querying_words': 5.0,
+            # },
 
         )),
 
         # Use a classifier on the result
-        ('classifier', SVC(kernel='linear', class_weight='balanced'))
+        ('classifier', SVC(C=1, kernel='linear', class_weight='balanced'))
 
     ])
 
@@ -454,7 +465,7 @@ def build_deny_pipeline():
     """Build a pipeline for predicting if a tweet is classified as deny or not."""
     return Pipeline([
         # Extract useful features from tweets
-        ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
+        ('extract_tweets', TweetDetailExtractor(task='A', strip_hashtags=False, strip_mentions=False)),
 
         # Combine processing of features
         ('union', FeatureUnion(
@@ -532,26 +543,43 @@ def build_deny_pipeline():
 
             # Relative weights of transformations
             transformer_weights={
-                'tweet_text': 2.0,
+                'tweet_text': 1.0,
 
-                'count_ellipsis': 5.0,
-                'count_question_marks': 5.0,
+                'count_ellipsis': 2.5,
+                'count_question_marks': 2.5,
 
                 'count_depth': 1.0,
 
-                'is_news': 2.5,
+                'is_news': 1.0,
                 'is_root': 2.5,
 
-                'pos_neg_sentiment': 1.0,
-                'denying_words': 10.0,
-                'querying_words': 10.0,
-                'offensiveness': 10.0,
-            },
+                'pos_neg_sentiment': 0.5,
+                'denying_words': 5.0,
+                'querying_words': 1.0,
+                'offensiveness': 5.0,
+            }
+
+
+            #     'tweet_text': 2.0,
+
+            #     'count_ellipsis': 5.0,
+            #     'count_question_marks': 5.0,
+
+            #     'count_depth': 1.0,
+
+            #     'is_news': 2.5,
+            #     'is_root': 2.5,
+
+            #     'pos_neg_sentiment': 1.0,
+            #     'denying_words': 10.0,
+            #     'querying_words': 10.0,
+            #     'offensiveness': 10.0,
+            # },
 
         )),
 
         # Use a classifier on the result
-        ('classifier', SVC(kernel='linear', class_weight='balanced'))
+        ('classifier', SVC(C=10, kernel='linear', class_weight='balanced'))
 
     ])
 
@@ -560,7 +588,7 @@ def build_base_pipeline():
     """Build a pipeline for predicting all 4 SDQC classes."""
     return Pipeline([
         # Extract useful features from tweets
-        ('extract_tweets', TweetDetailExtractor(strip_hashtags=True, strip_mentions=True)),
+        ('extract_tweets', TweetDetailExtractor(task='A', strip_hashtags=False, strip_mentions=False)),
 
         # Combine processing of features
         ('union', FeatureUnion(
@@ -683,7 +711,7 @@ def build_base_pipeline():
                 'tweet_text': 1.0,
 
                 'verified': 0.5,
-                'is_news': 10.0,
+                'is_news': 5.0,
                 'is_root': 20.0,
 
                 'count_periods': 0.5,
@@ -692,19 +720,44 @@ def build_base_pipeline():
                 'count_chars': 0.5,
 
                 'count_hashtags': 0.5,
-                'count_mentions':0.5,
+                'count_mentions': 0.5,
                 'count_retweets': 0.5,
                 'count_depth': 0.5,
 
                 'pos_neg_sentiment': 1.0,
-                'denying_words': 20.0,
-                'querying_words': 10.0,
-                'offensiveness': 20.0,
+                'denying_words': 1.0,
+                'querying_words': 1.0,
+                'offensiveness': 5.0,
             },
+
+
+
+            # {
+            #     'tweet_text': 1.0,
+
+            #     'verified': 0.5,
+            #     'is_news': 10.0,
+            #     'is_root': 20.0,
+
+            #     'count_periods': 0.5,
+            #     'count_question_marks': 0.5,
+            #     'count_exclamations': 0.5,
+            #     'count_chars': 0.5,
+
+            #     'count_hashtags': 0.5,
+            #     'count_mentions':0.5,
+            #     'count_retweets': 0.5,
+            #     'count_depth': 0.5,
+
+            #     'pos_neg_sentiment': 1.0,
+            #     'denying_words': 20.0,
+            #     'querying_words': 10.0,
+            #     'offensiveness': 20.0,
+            # },
 
         )),
 
         # Use a classifier on the result
-        ('classifier', SVC(kernel='rbf'))
+        ('classifier', SVC(C=100, gamma=0.001, kernel='rbf'))
 
     ])

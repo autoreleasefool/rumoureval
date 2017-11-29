@@ -32,7 +32,10 @@ STEMMED_LEXICON = {
 }
 
 # Cache tweet details constructed to save computation time for multiple pipelines
-TWEET_DETAIL_CACHE = {}
+TWEET_DETAIL_CACHE = {
+    'A': {},
+    'B': {},
+}
 
 # Set of tweet details and the kind of detail
 TWEET_DETAILS = [
@@ -67,6 +70,12 @@ TWEET_DETAILS = [
     ('exclamation_count', int),
     ('ellipsis_count', int),
     ('char_count', int),
+
+    # Child tweet properties
+    ('child_denies', int),
+    ('child_queries', int),
+    ('child_comments', int),
+    ('child_supports', int),
 ]
 
 
@@ -74,27 +83,50 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
     """Extract relevant details from tweets."""
     # pylint:disable=C0103,W0613,R0201
 
-    def __init__(self, strip_hashtags=True, strip_mentions=True):
+    def __init__(self, task='A', strip_hashtags=False, strip_mentions=False, classifications=None):
         """Initialize stemmer and tokenizer."""
+        self._task = task
         self._tokenizer = TweetTokenizer(preserve_case=False, reduce_len=True, strip_handles=True)
         self._strip_hashtags = strip_hashtags
         self._strip_mentions = strip_mentions
+        self._classifications = classifications
+
+
+    def get_params(self, deep=True):
+        """Get the params"""
+        return {
+            'task': self._task,
+            'strip_hashtags': self._strip_hashtags,
+            'strip_mentions': self._strip_mentions,
+            'classifications': self._classifications,
+        }
+
+
+    def set_params(self, **parameters):
+        """Set the params"""
+        for parameter, value in parameters.items():
+            setattr(self, '_{}'.format(parameter), value)
+        self._tokenizer = TweetTokenizer(preserve_case=False, reduce_len=True, strip_handles=True)
 
 
     @staticmethod
-    def get_parseable_tweet_text(tweet):
+    def get_parseable_tweet_text(tweet, task='A'):
         """Given a tweet, return the most parseable tweet text.
 
         :param tweet:
             a tweet
         :type:
             :class:`Tweet`
+        :param task:
+            the task, 'A', or 'B'
+        :type task:
+            `str`
         :rtype:
             `str`
         """
         # Expanding tweet text for better accuracy
-        if tweet['id'] in TWEET_DETAIL_CACHE:
-            return TWEET_DETAIL_CACHE[tweet['id']]['text']
+        if tweet['id'] in TWEET_DETAIL_CACHE[task]:
+            return TWEET_DETAIL_CACHE[task][tweet['id']]['text']
 
         expanded_text = tweet['text'].encode('ascii', 'ignore').decode('ascii')
         expanded_text = unescape(expanded_text)
@@ -191,10 +223,10 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
         for i, tweet in enumerate(tweets):
             # Check if the details have been calculated before, and pull from cache if so
             properties = {}
-            if tweet['id'] in TWEET_DETAIL_CACHE:
-                properties = TWEET_DETAIL_CACHE[tweet['id']]
+            if tweet['id'] in TWEET_DETAIL_CACHE[self._task]:
+                properties = TWEET_DETAIL_CACHE[self._task][tweet['id']]
             else:
-                expanded_text = TweetDetailExtractor.get_parseable_tweet_text(tweet)
+                expanded_text = TweetDetailExtractor.get_parseable_tweet_text(tweet, task=self._task)
                 properties['text'] = expanded_text
 
                 # Stem, and remove stop words
@@ -224,7 +256,7 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
 
                 properties['text_minus_root'] = list(
                     set(properties['text_stemmed_stopped']) -
-                    set(self._tokenize(TweetDetailExtractor.get_parseable_tweet_text(root)))
+                    set(self._tokenize(TweetDetailExtractor.get_parseable_tweet_text(root, task=self._task)))
                 )
 
                 # Count the punctuations
@@ -260,10 +292,29 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                     word for word in stemmed if word in STEMMED_LEXICON['personal']
                     ]
 
+                if self._task == 'B':
+                    properties['child_denies'] = len([
+                        tweet for tweet in self._classifications if self._classifications[tweet] == 'deny'
+                    ])
+                    properties['child_queries'] = len([
+                        tweet for tweet in self._classifications if self._classifications[tweet] == 'query'
+                    ])
+                    properties['child_comments'] = len([
+                        tweet for tweet in self._classifications if self._classifications[tweet] == 'comment'
+                    ])
+                    properties['child_supports'] = len([
+                        tweet for tweet in self._classifications if self._classifications[tweet] == 'support'
+                    ])
+                else:
+                    properties['child_denies'] = 0
+                    properties['child_queries'] = 0
+                    properties['child_comments'] = 0
+                    properties['child_supports'] = 0
+
             for detail in TWEET_DETAILS:
                 features[detail[0]][i] = properties[detail[0]]
 
             # Cache the generated details for the tweet
-            TWEET_DETAIL_CACHE[tweet['id']] = properties
+            TWEET_DETAIL_CACHE[self._task][tweet['id']] = properties
 
         return features
