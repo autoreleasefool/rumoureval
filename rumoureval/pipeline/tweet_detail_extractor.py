@@ -19,6 +19,7 @@ from ..corpus.stop_words import STOP_WORDS
 
 URLS_RE = re.compile(r"""(%s)""" % URLS, re.VERBOSE | re.I | re.UNICODE)
 PUNCTUATION_RE = re.compile(r'(\.)|(\?)|(\!)|(\.\.\.)|( )')
+NON_ALPHA_RE = re.compile(r'^[^a-z]+$', re.I)
 
 STEMMER = PorterStemmer()
 STEMMED_STOP_WORDS = frozenset([STEMMER.stem(word) for word in STOP_WORDS])
@@ -46,13 +47,16 @@ TWEET_DETAILS = [
     ('text_minus_root', list),
 
     # Boolean properties
-    ('verified', int),
-    ('is_news', int),
-    ('is_root', int),
+    ('verified', bool),
+    ('is_news', bool),
+    ('is_root', bool),
+    ('has_url', bool),
+    ('ends_with_question', bool),
 
     # Basic features
     ('hashtags', list),
     ('user_mentions', list),
+    ('favorite_count', int),
     ('depth', int),
     ('retweet_count', int),
 
@@ -70,6 +74,7 @@ TWEET_DETAILS = [
     ('exclamation_count', int),
     ('ellipsis_count', int),
     ('char_count', int),
+    ('number_count', int),
 
     # Child tweet properties
     ('child_denies', int),
@@ -251,6 +256,8 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 properties['hashtags'] = tweet['entities']['hashtags']
                 properties['user_mentions'] = tweet['entities']['user_mentions']
                 properties['retweet_count'] = tweet['retweet_count']
+                properties['has_url'] = 1 if URLS_RE.match(tweet['text']) else -1
+                properties['favorite_count'] = tweet['favorite_count']
 
                 # Get parent tweet
                 depth = 0
@@ -261,9 +268,20 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 properties['depth'] = depth
 
                 # Boolean properties
-                properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
-                properties['is_root'] = 1 if depth == 0 else 0
-                properties['verified'] = 1 if tweet['user']['verified'] else 0
+                properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else -1
+                properties['is_root'] = 1 if depth == 0 else -1
+                properties['verified'] = 1 if tweet['user']['verified'] else -1
+
+                # Get last term in the tweet
+                last_term = None
+                if len(properties['text_stemmed_stopped']) > 0:
+                    last_term = -1
+                    while abs(last_term - 1) < len(properties['text_stemmed_stopped']) and \
+                        (properties['text_stemmed_stopped'][last_term][0] == '#' or \
+                            NON_ALPHA_RE.match(properties['text_stemmed_stopped'][last_term][0])):
+                        last_term -= 1
+                    last_term = properties['text_stemmed_stopped'][last_term][-1]
+                properties['ends_with_question'] = 1 if len(properties['text_stemmed_stopped']) > 0 and properties['text_stemmed_stopped'][-1][-1] == '?' else -1
 
                 properties['text_minus_root'] = list(
                     set(properties['text_stemmed_stopped']) -
@@ -279,6 +297,9 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
 
                 # Count the characters in the tweet, minus spaces
                 properties['char_count'] = len(properties['text']) - punc_count['sp']
+                properties['number_count'] = len([
+                    number for number in properties['text_stemmed_stopped'] if re.match(r'[0-9]+', number)
+                ])
 
                 properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else 0
                 properties['is_root'] = 0 if depth == 0 else 1
