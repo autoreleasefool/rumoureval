@@ -1,5 +1,6 @@
 """Extract relevant details from tweets."""
 
+import dateutil.parser
 import re
 from html import unescape
 import numpy as np
@@ -10,8 +11,6 @@ from ..corpus.contractions import CONTRACTIONS
 from ..corpus.news import is_news
 from ..corpus.opinion import (
     POSITIVE_WORDS, NEGATIVE_WORDS, QUERYING_WORDS, DENYING_WORDS,
-    POSITIVE_ACRONYMS, NEGATIVE_ACRONYMS, QUERYING_ACRONYMS, DENYING_ACRONYMS,
-    POSITIVE_EMOJI, NEGATIVE_EMOJI, QUERYING_EMOJI, DENYING_EMOJI,
     SWEAR_WORDS, RACES_RELIGIONS_POLITICAL
 )
 from ..corpus.stop_words import STOP_WORDS
@@ -59,6 +58,7 @@ TWEET_DETAILS = [
     ('favorite_count', int),
     ('depth', int),
     ('retweet_count', int),
+    ('account_age', int),
 
     # Sentimental analysis
     ('positive_words', list),
@@ -258,6 +258,10 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 properties['retweet_count'] = tweet['retweet_count']
                 properties['has_url'] = 1 if URLS_RE.match(tweet['text']) else -1
                 properties['favorite_count'] = tweet['favorite_count']
+
+                account_created_at = dateutil.parser.parse(tweet['user']['created_at'])
+                tweet_created_at = dateutil.parser.parse(tweet['created_at'])
+                properties['account_age'] = (tweet_created_at - account_created_at).days
 
                 # Get parent tweet
                 depth = 0
