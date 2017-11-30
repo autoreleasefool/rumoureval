@@ -263,6 +263,12 @@ def build_query_pipeline():
                     ('vect', DictVectorizer()),
                 ])),
 
+                ('ends_with_question', Pipeline([
+                    ('selector', ItemSelector(keys='ends_with_question')),
+                    ('count', FeatureCounter(names='ends_with_question')),
+                    ('vect', DictVectorizer()),
+                ])),
+
                 # Punctuation
                 ('count_question_marks', Pipeline([
                     ('selector', ItemSelector(keys='question_mark_count')),
@@ -297,6 +303,7 @@ def build_query_pipeline():
 
                 'pos_neg_sentiment': 0.5,
                 'querying_words': 1.0,
+                'ends_with_question': 10.0,
             }
 
         )),
@@ -340,6 +347,12 @@ def build_base_pipeline():
                 ('verified', Pipeline([
                     ('selector', ItemSelector(keys='verified')),
                     ('count', FeatureCounter(names='verified')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('ends_with_question', Pipeline([
+                    ('selector', ItemSelector(keys='ends_with_question')),
+                    ('count', FeatureCounter(names='ends_with_question')),
                     ('vect', DictVectorizer()),
                 ])),
 
@@ -436,6 +449,7 @@ def build_base_pipeline():
                 'verified': 0.5,
                 'is_news': 5.0,
                 'is_root': 20.0,
+                'ends_with_question': 10.0,
 
                 'count_periods': 0.5,
                 'count_question_marks': 0.5,

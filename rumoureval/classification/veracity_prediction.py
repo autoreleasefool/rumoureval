@@ -7,6 +7,7 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVC
 from sklearn.pipeline import FeatureUnion, Pipeline
+from sklearn.preprocessing import StandardScaler
 from ..pipeline.item_selector import ItemSelector
 from ..pipeline.feature_counter import FeatureCounter
 from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
@@ -17,6 +18,29 @@ from ..util.log import get_log_separator
 
 CLASSES = ['false', 'true', 'unverified']
 LOGGER = logging.getLogger()
+
+
+def filter_tweets(tweets, annotations):
+    """Filter tweets which are believed to cause additional confusion in the classifier.
+
+    :param tweets:
+        list of twitter threads to train model on
+    :type tweets:
+        `list` of :class:`Tweet`
+    :param annotations:
+        Mapping of tweet id to their annotations
+    :type annotations:
+        `dict`
+    :rtype:
+        `list` of :class:`Tweet`
+    """
+    filtered_tweets = []
+    for tweet in tweets:
+        if annotations[tweet['id_str']] == 'unverified':
+            continue
+        filtered_tweets.append(tweet)
+
+    return filtered_tweets
 
 
 def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annotations, task_a_results):
@@ -50,6 +74,9 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     LOGGER.info(get_log_separator())
     LOGGER.info('Beginning Veracity Prediction Task (Task B)')
 
+    LOGGER.info('Filter tweets from training set')
+    tweets_train = filter_tweets(tweets_train, train_annotations)
+
     LOGGER.info('Initializing pipeline')
     pipeline = Pipeline([
         # Extract useful features from tweets
@@ -59,7 +86,7 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
         ('union', FeatureUnion(
             transformer_list=[
 
-                 # Count occurrences on tweet text
+                # Count occurrences on tweet text
                 ('tweet_text', Pipeline([
                     ('selector', ItemSelector(keys='text_stemmed_stopped')),
                     ('list_to_str', pipelinize(list_to_str)),
@@ -72,14 +99,48 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
                     ('count', FeatureCounter(names='support_percentage')),
                     ('vect', DictVectorizer()),
                 ])),
+
                 ('percentage_of_denies', Pipeline([
                     ('selector', ItemSelector(keys='denies_percentage')),
                     ('count', FeatureCounter(names='denies_percentage')),
                     ('vect', DictVectorizer()),
                 ])),
+
                 ('percentage_of_queries', Pipeline([
                     ('selector', ItemSelector(keys='queries_percentage')),
                     ('count', FeatureCounter(names='queries_percentage')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Count features
+                ('number_count', Pipeline([
+                    ('selector', ItemSelector(keys='number_count')),
+                    ('count', FeatureCounter(names='number_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('count_chars', Pipeline([
+                    ('selector', ItemSelector(keys='char_count')),
+                    ('count', FeatureCounter(names='char_count')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                # Boolean features
+                ('verified', Pipeline([
+                    ('selector', ItemSelector(keys='verified')),
+                    ('count', FeatureCounter(names='verified')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('is_root', Pipeline([
+                    ('selector', ItemSelector(keys='is_root')),
+                    ('count', FeatureCounter(names='is_root')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('has_url', Pipeline([
+                    ('selector', ItemSelector(keys='has_url')),
+                    ('count', FeatureCounter(names='has_url')),
                     ('vect', DictVectorizer()),
                 ])),
 
@@ -87,16 +148,31 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
 
             # Relative weights of transformations
             transformer_weights={
-                'tweet_text': 1.0,
+
+                # Bag of words
+                'tweet_text': 2.0,
+
+                # Percetange of child tweets
                 'percentage_of_support': 1.0,
                 'percentage_of_denies': 1.0,
                 'percentage_of_queries': 1.0,
+
+                # Count features
+                'number_count': 1.0,
+                'count_chars': 1.0,
+
+                # Boolean features
+                'verified': 1.0,
+                'is_root': 1.5,
+                'has_url': 1.0,
+
             },
         )),
 
+        ('scaler', StandardScaler(with_mean=False)),
+
         # Use a classifier on the result
-        # ('classifier', BernoulliNB(alpha=0.1))
-        ('classifier', SVC(kernel='rbf'))
+        ('classifier', SVC(kernel='rbf', class_weight='balanced', probability=True))
 
         ])
     LOGGER.info(pipeline)
@@ -112,7 +188,25 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     # Predicting classes for tweets_eval
     start_time = time()
     predictions = pipeline.predict(tweets_eval)
+    confidence = pipeline.predict_proba(tweets_eval)
     LOGGER.debug("eval time:  %0.3fs", time() - start_time)
+
+    # TODO: remove below
+    # Print misclassified tweets
+    print('============================================================')
+    print('|                                                          |')
+    print('|                      Misclassified                       |')
+    print('|                                                          |')
+    print('============================================================')
+    for i, prediction in enumerate(predictions):
+        if prediction != y_eval[i]:
+            print('--------------------\n{}\n{}\n{}\n{}'.format(
+                y_eval[i],
+                prediction,
+                confidence[i],
+                TweetDetailExtractor.get_parseable_tweet_text(tweets_eval[i])
+                ))
+    # TODO: remove above
 
     # Outputting classifier results
     LOGGER.debug("accuracy:   %0.3f", metrics.accuracy_score(y_eval, predictions))
@@ -123,7 +217,8 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
 
     # Convert results to dict of tweet ID to predicted class
     results = {}
-    for (i, prediction) in enumerate(predictions):
-        results[tweets_eval[i]['id_str']] = (prediction, 1)
+    for i, prediction in enumerate(predictions):
+        prediction_confidence = max(confidence[i]) if max(confidence[i]) < 0.9 else 1
+        results[tweets_eval[i]['id_str']] = (prediction, prediction_confidence)
 
     return results
