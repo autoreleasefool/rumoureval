@@ -24,6 +24,8 @@ def main(args=None):
                         help='enable verbose logging')
     parser.add_argument('--osorted', action='store_true',
                         help='output tweets sorted by class')
+    parser.add_argument('--disable-cache', action='store_true',
+                        help='disable cached classifier')
     parsed_args = parser.parse_args()
     eval_datasource = 'test' if parsed_args.test else 'dev'
 
@@ -48,15 +50,16 @@ def main(args=None):
 
     # Output tweets sorted by class
     if parsed_args.osorted:
-        output_data_by_class(tweets_train, train_annotations[0])
-        output_data_by_class(root_tweets_train, train_annotations[0], prefix='root')
-        output_data_by_class(root_tweets_train, train_annotations[1])
+        output_data_by_class(tweets_train, train_annotations[0], 'A')
+        output_data_by_class(root_tweets_train, train_annotations[0], 'A', prefix='root')
+        output_data_by_class(root_tweets_train, train_annotations[1], 'B')
 
     # Perform sdqc task
     task_a_results = sdqc(tweets_train,
                           tweets_eval,
                           train_annotations[0],
-                          eval_annotations[0])
+                          eval_annotations[0],
+                          not parsed_args.disable_cache)
 
     # Perform veracity prediction task
     task_b_results = veracity_prediction(root_tweets_train,
