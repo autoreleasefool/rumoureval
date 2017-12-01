@@ -78,7 +78,7 @@ def filter_tweets(tweets, filter_short=False, similarity_threshold=0.9):
     return filtered_tweets
 
 
-def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
+def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations, use_cache):
     """
     Classify tweets into one of four categories - support (s), deny (d), query(q), comment (c).
 
@@ -98,6 +98,10 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
         sqdc task annotations for evaluation data
     :type eval_annotations:
         `dict`
+    :param use_cache:
+        true to enable using cached classifier
+    :type use_cache:
+        `bool`
     :rtype:
         `dict`
     """
@@ -129,7 +133,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
 
     # Training on tweets_train
     start_time = time()
-    if os.path.exists(os.path.join(get_output_path(), 'base_pipeline.pickle')):
+    if use_cache and os.path.exists(os.path.join(get_output_path(), 'base_pipeline.pickle')):
         base_pipeline = joblib.load(os.path.join(get_output_path(), 'base_pipeline.pickle'))
     else:
         base_pipeline.fit(tweets_train, y_train_base)
@@ -137,7 +141,7 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations):
     LOGGER.info("base_pipeline training:  %0.3fs", time() - start_time)
 
     start_time = time()
-    if os.path.exists(os.path.join(get_output_path(), 'query_pipeline.pickle')):
+    if use_cache and os.path.exists(os.path.join(get_output_path(), 'query_pipeline.pickle')):
         query_pipeline = joblib.load(os.path.join(get_output_path(), 'query_pipeline.pickle'))
     else:
         query_pipeline.fit(tweets_train, y_train_query)
@@ -259,6 +263,12 @@ def build_query_pipeline():
                     ('vect', DictVectorizer()),
                 ])),
 
+                ('ends_with_question', Pipeline([
+                    ('selector', ItemSelector(keys='ends_with_question')),
+                    ('count', FeatureCounter(names='ends_with_question')),
+                    ('vect', DictVectorizer()),
+                ])),
+
                 # Punctuation
                 ('count_question_marks', Pipeline([
                     ('selector', ItemSelector(keys='question_mark_count')),
@@ -293,6 +303,7 @@ def build_query_pipeline():
 
                 'pos_neg_sentiment': 0.5,
                 'querying_words': 1.0,
+                'ends_with_question': 10.0,
             }
 
         )),
@@ -336,6 +347,12 @@ def build_base_pipeline():
                 ('verified', Pipeline([
                     ('selector', ItemSelector(keys='verified')),
                     ('count', FeatureCounter(names='verified')),
+                    ('vect', DictVectorizer()),
+                ])),
+
+                ('ends_with_question', Pipeline([
+                    ('selector', ItemSelector(keys='ends_with_question')),
+                    ('count', FeatureCounter(names='ends_with_question')),
                     ('vect', DictVectorizer()),
                 ])),
 
@@ -432,6 +449,7 @@ def build_base_pipeline():
                 'verified': 0.5,
                 'is_news': 5.0,
                 'is_root': 20.0,
+                'ends_with_question': 10.0,
 
                 'count_periods': 0.5,
                 'count_question_marks': 0.5,

@@ -10,6 +10,7 @@ from time import time
 import magic
 from .lists import filter_none
 from .log import get_log_separator
+from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
 from ..objects.tweet import Tweet
 
 
@@ -287,7 +288,7 @@ def import_data(datasource):
     return parsed_tweets
 
 
-def output_data_by_class(tweets, annotations, prefix=None):
+def output_data_by_class(tweets, annotations, task, prefix=None):
     """Output files for each annotation, containing all the tweets similarly annotated.
 
     :param tweets:
@@ -298,21 +299,34 @@ def output_data_by_class(tweets, annotations, prefix=None):
         tweet IDs mapped to their annotations
     :type annotations:
         `dict`
+    :param task:
+        the task being output
+    :type task:
+        'A' or 'B'
     :param prefix:
         prefix for filenames
     :type prefix:
         `str` or None
     """
+    detail_extractor = TweetDetailExtractor(task, strip_hashtags=False, strip_mentions=False)
     sorted_tweets = {}
+    sorted_tweet_text = {}
     for tweet in tweets:
         annotation = annotations[tweet['id_str']]
         if annotation not in sorted_tweets:
             sorted_tweets[annotation] = []
+            sorted_tweet_text[annotation] = set()
         sorted_tweets[annotation].append(tweet.raw())
+        sorted_tweet_text[annotation] |= set(list(detail_extractor._tokenize(TweetDetailExtractor.get_parseable_tweet_text(tweet, task=task))))
 
     os.makedirs(get_output_path(), exist_ok=True)
     for annotation in sorted_tweets:
         filename = ('{0}_{1}.json' if prefix is not None else '{1}.json').format(prefix, annotation)
         with open(os.path.join(get_output_path(), filename), 'w') as file:
             json.dump(sorted_tweets[annotation], file, sort_keys=True, indent=2)
+        if task == 'B':
+            filename = '{0}_dict.txt'.format(annotation)
+            with open(os.path.join(get_output_path(), filename), 'w') as file:
+                file.write('\n'.join(sorted(list(sorted_tweet_text[annotation]))))
+
 

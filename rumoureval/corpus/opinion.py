@@ -9,35 +9,6 @@ Minqing Hu and Bing Liu. "Mining and Summarizing Customer Reviews."
 Denial and querying words hand-tuned.
 """
 
-# Acronyms with generally positive affiliation
-POSITIVE_ACRONYMS = frozenset([])
-
-# Acronyms with generally negative affiliation
-NEGATIVE_ACRONYMS = frozenset([])
-
-# Acronyms with generally inquisitive affiliation
-QUERYING_ACRONYMS = frozenset([])
-
-# Acronyms with generally denying affiliation
-DENYING_ACRONYMS = frozenset([
-    "wtf",
-    "wtw",
-    "lol",
-    "smh"
-])
-
-# Positive emoji
-POSITIVE_EMOJI = frozenset([])
-
-# Negative emoji
-NEGATIVE_EMOJI = frozenset([])
-
-# Querying emoji
-QUERYING_EMOJI = frozenset([])
-
-# Denying emoji
-DENYING_EMOJI = frozenset([])
-
 # Races, religions, and political parties
 RACES_RELIGIONS_POLITICAL = frozenset([
     "arab"
