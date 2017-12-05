@@ -253,11 +253,11 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                     ]
 
                 # Basic features
-                properties['hashtags'] = tweet['entities']['hashtags']
-                properties['user_mentions'] = tweet['entities']['user_mentions']
-                properties['retweet_count'] = tweet['retweet_count']
+                properties['hashtags'] = tweet['entities']['hashtags'] if 'entities' in tweet else tweet['hashtags']
+                properties['user_mentions'] = tweet['entities']['user_mentions']  if 'entities' in tweet else tweet['user_mentions']
+                properties['retweet_count'] = tweet['retweet_count'] if 'retweet_count' in tweet else 0
                 properties['has_url'] = 1 if URLS_RE.match(tweet['text']) else -1
-                properties['favorite_count'] = tweet['favorite_count']
+                properties['favorite_count'] = tweet['favorite_count'] if 'favorite_count' in tweet else 0
 
                 account_created_at = dateutil.parser.parse(tweet['user']['created_at'])
                 tweet_created_at = dateutil.parser.parse(tweet['created_at'])
@@ -274,7 +274,7 @@ class TweetDetailExtractor(BaseEstimator, TransformerMixin):
                 # Boolean properties
                 properties['is_news'] = 1 if is_news(tweet['user']['screen_name']) else -1
                 properties['is_root'] = 1 if depth == 0 else -1
-                properties['verified'] = 1 if tweet['user']['verified'] else -1
+                properties['verified'] = 1 if 'verified' in tweet['user'] and tweet['user']['verified'] else -1
 
                 # Get last term in the tweet
                 last_term = None

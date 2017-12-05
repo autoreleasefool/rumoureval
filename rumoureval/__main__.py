@@ -20,6 +20,8 @@ def main(args=None):
     parser = argparse.ArgumentParser(description='RumourEval, by Tong Liu and Joseph Roque')
     parser.add_argument('--test', action='store_true',
                         help='run with test data. defaults to run with dev data')
+    parser.add_argument('--trump', action='store_true',
+                        help='run with trump data. defaults to run with dev data. overridden by --test')
     parser.add_argument('--verbose', action='store_true',
                         help='enable verbose logging')
     parser.add_argument('--osorted', action='store_true',
@@ -27,7 +29,7 @@ def main(args=None):
     parser.add_argument('--disable-cache', action='store_true',
                         help='disable cached classifier')
     parsed_args = parser.parse_args()
-    eval_datasource = 'test' if parsed_args.test else 'dev'
+    eval_datasource = 'test' if parsed_args.test else ('trump' if parsed_args.trump else 'dev')
 
     # Setup logger
     logger = setup_logger(parsed_args.verbose)

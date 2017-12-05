@@ -191,22 +191,20 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     confidence = pipeline.predict_proba(tweets_eval)
     LOGGER.debug("eval time:  %0.3fs", time() - start_time)
 
-    # TODO: remove below
     # Print misclassified tweets
-    print('============================================================')
-    print('|                                                          |')
-    print('|                      Misclassified                       |')
-    print('|                                                          |')
-    print('============================================================')
+    LOGGER.debug('============================================================')
+    LOGGER.debug('|                                                          |')
+    LOGGER.debug('|                      Misclassified                       |')
+    LOGGER.debug('|                                                          |')
+    LOGGER.debug('============================================================')
     for i, prediction in enumerate(predictions):
         if prediction != y_eval[i]:
-            print('--------------------\n{}\n{}\n{}\n{}'.format(
+            LOGGER.debug('--------------------\n{}\n{}\n{}\n{}'.format(
                 y_eval[i],
                 prediction,
                 confidence[i],
                 TweetDetailExtractor.get_parseable_tweet_text(tweets_eval[i])
                 ))
-    # TODO: remove above
 
     # Outputting classifier results
     LOGGER.debug("accuracy:   %0.3f", metrics.accuracy_score(y_eval, predictions))

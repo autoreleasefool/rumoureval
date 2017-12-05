@@ -166,12 +166,11 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations, use_cac
 
     LOGGER.debug("eval time:  %0.3fs", time() - start_time)
 
-    # TODO: remove below
-    print('============================================================')
-    print('|                                                          |')
-    print('|                  Misclassified - query                   |')
-    print('|                                                          |')
-    print('============================================================')
+    LOGGER.debug('============================================================')
+    LOGGER.debug('|                                                          |')
+    LOGGER.debug('|                  Misclassified - query                   |')
+    LOGGER.debug('|                                                          |')
+    LOGGER.debug('============================================================')
 
     # Print misclassified query vs not_query
     for i, prediction in enumerate(query_predictions):
@@ -179,13 +178,12 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations, use_cac
             root = tweets_eval[i]
             while root.parent() != None:
                 root = root.parent()
-            print('{}\t{}\t{}\n\t\t{}'.format(
+            LOGGER.debug('{}\t{}\t{}\n\t\t{}'.format(
                 y_eval_base[i],
                 prediction,
                 TweetDetailExtractor.get_parseable_tweet_text(tweets_eval[i]),
                 TweetDetailExtractor.get_parseable_tweet_text(root)
                 ))
-    # TODO: remove above
 
     LOGGER.info('Completed SDQC Task (Task A). Printing results')
 

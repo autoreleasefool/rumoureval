@@ -52,5 +52,9 @@ class Tweet(object):
         return self._raw_tweet[name] if name in self._raw_tweet else None
 
 
+    def __contains__(self, name):
+        return name in self._raw_tweet
+
+
     def __str__(self):
         return str(self._raw_tweet)
