@@ -28,6 +28,8 @@ def main(args=None):
                         help='output tweets sorted by class')
     parser.add_argument('--disable-cache', action='store_true',
                         help='disable cached classifier')
+    parser.add_argument('--plot', action='store_true',
+                        help='plot confusion matrices')
     parsed_args = parser.parse_args()
     eval_datasource = 'test' if parsed_args.test else ('trump' if parsed_args.trump else 'dev')
 
@@ -61,14 +63,16 @@ def main(args=None):
                           tweets_eval,
                           train_annotations[0],
                           eval_annotations[0],
-                          not parsed_args.disable_cache)
+                          not parsed_args.disable_cache,
+                          parsed_args.plot)
 
     # Perform veracity prediction task
     task_b_results = veracity_prediction(root_tweets_train,
                                          root_tweets_eval,
                                          train_annotations[1],
                                          eval_annotations[1],
-                                         task_a_results)
+                                         task_a_results,
+                                         parsed_args.plot)
 
     # Score tasks and output results
     task_a_scorer = Scorer('A', eval_datasource)

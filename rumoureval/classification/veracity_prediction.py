@@ -2,6 +2,8 @@
 
 import logging
 from time import time
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn import metrics
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -14,6 +16,7 @@ from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
 from ..pipeline.pipelinize import pipelinize
 from ..util.lists import list_to_str
 from ..util.log import get_log_separator
+from ..util.plot import plot_confusion_matrix
 
 
 CLASSES = ['false', 'true', 'unverified']
@@ -43,7 +46,7 @@ def filter_tweets(tweets, annotations):
     return filtered_tweets
 
 
-def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annotations, task_a_results):
+def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annotations, task_a_results, plot):
     """
     Predict the veracity of tweets.
 
@@ -67,6 +70,10 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
         classification results from task A
     :type task_a_results:
         `dict`
+    :param plot:
+        true to plot confusion matrix
+    :type plot:
+        `bool`
     :rtype:
         `dict`
     """
@@ -212,6 +219,17 @@ def veracity_prediction(tweets_train, tweets_eval, train_annotations, eval_annot
     LOGGER.info(metrics.classification_report(y_eval, predictions, target_names=CLASSES))
     LOGGER.info("confusion matrix:")
     LOGGER.info(metrics.confusion_matrix(y_eval, predictions))
+
+    if plot:
+        cm = metrics.confusion_matrix(y_eval, predictions)
+        np.set_printoptions(precision=2)
+
+        # Plot normalized confusion matrix
+        figure = plt.figure()
+        figure.set_facecolor('#1c212b')
+        plot_confusion_matrix(cm, classes=CLASSES, normalize=True, title='Task B Confusion Matrix')
+
+        plt.show()
 
     # Convert results to dict of tweet ID to predicted class
     results = {}

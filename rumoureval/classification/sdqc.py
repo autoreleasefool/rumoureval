@@ -3,6 +3,8 @@
 import logging
 import os
 from time import time
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn import metrics
 from sklearn.externals import joblib
 from sklearn.feature_extraction import DictVectorizer
@@ -17,6 +19,7 @@ from ..pipeline.tweet_detail_extractor import TweetDetailExtractor
 from ..util.lists import list_to_str
 from ..util.log import get_log_separator
 from ..util.data import get_output_path
+from ..util.plot import plot_confusion_matrix
 
 
 LOGGER = logging.getLogger()
@@ -78,7 +81,7 @@ def filter_tweets(tweets, filter_short=False, similarity_threshold=0.9):
     return filtered_tweets
 
 
-def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations, use_cache):
+def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations, use_cache, plot):
     """
     Classify tweets into one of four categories - support (s), deny (d), query(q), comment (c).
 
@@ -101,6 +104,10 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations, use_cac
     :param use_cache:
         true to enable using cached classifier
     :type use_cache:
+        `bool`
+    :param plot:
+        true to plot confusion matrix
+    :type plot:
         `bool`
     :rtype:
         `dict`
@@ -203,6 +210,17 @@ def sdqc(tweets_train, tweets_eval, train_annotations, eval_annotations, use_cac
     LOGGER.info(metrics.confusion_matrix(y_eval_base, base_predictions))
     LOGGER.info("confusion matrix (combined):")
     LOGGER.info(metrics.confusion_matrix(y_eval_base, predictions))
+
+    if plot:
+        cm = metrics.confusion_matrix(y_eval_base, predictions)
+        np.set_printoptions(precision=2)
+
+        # Plot normalized confusion matrix
+        figure = plt.figure()
+        figure.set_facecolor('#1c212b')
+        plot_confusion_matrix(cm, classes=CLASSES, normalize=True, title='Task A Confusion Matrix')
+
+        plt.show()
 
     # Convert results to dict of tweet ID to predicted class
     results = {}
