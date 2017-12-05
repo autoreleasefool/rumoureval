@@ -1,0 +1,50 @@
+{
+    "created_at": "Tue Jun 27 12:31:19 +0000 2017",
+    "favorite_count": 122,
+    "hashtags": [],
+    "id": 879678530379931648,
+    "id_str": "879678530379931648",
+    "in_reply_to_screen_name": "realDonaldTrump",
+    "in_reply_to_status_id": 879678356450676736,
+    "in_reply_to_user_id": 25073877,
+    "lang": "en",
+    "retweet_count": 6,
+    "source": "<a href=\"http://twitter.com\" rel=\"nofollow\">Twitter Web Client</a>",
+    "text": "@realDonaldTrump Dear WH staffer standing nearby: you should probably take away the Orange One's phone. Herstory wi\u2026 https://t.co/JmVPgy8QBe",
+    "truncated": true,
+    "urls": [{
+        "expanded_url": "https://twitter.com/i/web/status/879678530379931648",
+        "url": "https://t.co/JmVPgy8QBe"
+    }],
+    "user": {
+        "created_at": "Sun Mar 27 22:08:40 +0000 2011",
+        "description": "@TheVillainesse  assoc. ed. + @idealogmag dig. ed. Bylines @dwnews, @businessinsider, @NZStuff. They/them. Tips: ben.mack@villainesse.com",
+        "favourites_count": 5953,
+        "followers_count": 2414,
+        "friends_count": 735,
+        "geo_enabled": true,
+        "id": 273130455,
+        "lang": "en",
+        "listed_count": 45,
+        "location": "Auckland, New Zealand",
+        "name": "Ben Mack",
+        "profile_background_color": "0F0A02",
+        "profile_background_image_url": "http://pbs.twimg.com/profile_background_images/432586283550924800/DmjD82Qo.jpeg",
+        "profile_background_tile": true,
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/273130455/1509433022",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/868339321274646528/TXjif_A5_normal.jpg",
+        "profile_link_color": "FF9EE8",
+        "profile_sidebar_fill_color": "171106",
+        "profile_text_color": "8A7302",
+        "screen_name": "benmack_nz",
+        "statuses_count": 8065,
+        "time_zone": "Wellington",
+        "url": "https://t.co/MDgShJwyiS",
+        "utc_offset": 46800
+    },
+    "user_mentions": [{
+        "id": 25073877,
+        "name": "Donald J. Trump",
+        "screen_name": "realDonaldTrump"
+    }]
+}

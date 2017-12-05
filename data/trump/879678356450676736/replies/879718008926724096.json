@@ -1,0 +1,39 @@
+{
+    "created_at": "Tue Jun 27 15:08:12 +0000 2017",
+    "hashtags": [],
+    "id": 879718008926724096,
+    "id_str": "879718008926724096",
+    "in_reply_to_screen_name": "realDonaldTrump",
+    "in_reply_to_status_id": 879678356450676736,
+    "in_reply_to_user_id": 25073877,
+    "lang": "en",
+    "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+    "text": "@realDonaldTrump Donald Trump = Fake News!",
+    "urls": [],
+    "user": {
+        "created_at": "Thu Mar 17 13:01:53 +0000 2016",
+        "default_profile": true,
+        "description": "Political enthusiast, Army veteran, Nurse & Husband, Focused on giving a voice to the people of Missouri",
+        "favourites_count": 3191,
+        "followers_count": 295,
+        "friends_count": 527,
+        "id": 710451084918001664,
+        "lang": "en",
+        "listed_count": 7,
+        "location": "Jefferson City, MO",
+        "name": "Kevin Nelson for MO",
+        "profile_background_color": "F5F8FA",
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/710451084918001664/1478797709",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/884826930557714433/zWy51_sQ_normal.jpg",
+        "profile_link_color": "1DA1F2",
+        "profile_sidebar_fill_color": "DDEEF6",
+        "profile_text_color": "333333",
+        "screen_name": "KevinNelson2018",
+        "statuses_count": 602
+    },
+    "user_mentions": [{
+        "id": 25073877,
+        "name": "Donald J. Trump",
+        "screen_name": "realDonaldTrump"
+    }]
+}

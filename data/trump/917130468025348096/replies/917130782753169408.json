@@ -1,0 +1,38 @@
+{
+    "created_at": "Sun Oct 08 20:53:12 +0000 2017",
+    "hashtags": [{
+        "text": "trumpisfat"
+    }],
+    "id": 917130782753169408,
+    "id_str": "917130782753169408",
+    "in_reply_to_screen_name": "realDonaldTrump",
+    "in_reply_to_status_id": 917130468025348096,
+    "in_reply_to_user_id": 25073877,
+    "lang": "und",
+    "source": "<a href=\"http://twitter.com/download/android\" rel=\"nofollow\">Twitter for Android</a>",
+    "text": "@realDonaldTrump #trumpisfat",
+    "urls": [],
+    "user": {
+        "created_at": "Fri Nov 14 05:18:48 +0000 2014",
+        "default_profile": true,
+        "favourites_count": 70,
+        "followers_count": 19,
+        "friends_count": 149,
+        "id": 2899030280,
+        "lang": "en",
+        "name": "Ethan Raymond",
+        "profile_background_color": "C0DEED",
+        "profile_background_image_url": "http://abs.twimg.com/images/themes/theme1/bg.png",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/887850478398193666/ZqrOoGAK_normal.jpg",
+        "profile_link_color": "1DA1F2",
+        "profile_sidebar_fill_color": "DDEEF6",
+        "profile_text_color": "333333",
+        "screen_name": "jumboethan",
+        "statuses_count": 3054
+    },
+    "user_mentions": [{
+        "id": 25073877,
+        "name": "Donald J. Trump",
+        "screen_name": "realDonaldTrump"
+    }]
+}

@@ -1,0 +1,44 @@
+{
+    "created_at": "Tue Jun 27 13:05:47 +0000 2017",
+    "hashtags": [],
+    "id": 879687203147980801,
+    "id_str": "879687203147980801",
+    "in_reply_to_screen_name": "DaysLeft4Trump",
+    "in_reply_to_status_id": 879678387849134084,
+    "in_reply_to_user_id": 822491959805825027,
+    "lang": "en",
+    "source": "<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Lite</a>",
+    "text": "@DaysLeft4Trump @realDonaldTrump Do we have to wait that long?",
+    "urls": [],
+    "user": {
+        "created_at": "Wed Nov 30 06:00:46 +0000 2016",
+        "default_profile": true,
+        "description": "Married, 2 children, no grandchildren, retired who hates Donald Trump! \n#TheResistance #NevermyPresident",
+        "favourites_count": 3861,
+        "followers_count": 214,
+        "friends_count": 518,
+        "geo_enabled": true,
+        "id": 803841180937101312,
+        "lang": "en",
+        "listed_count": 3,
+        "location": "Somewhere between here and there! ",
+        "name": "Woman on a Mission \ud83d\ude02 \ud83d\ude02",
+        "profile_background_color": "F5F8FA",
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/803841180937101312/1512392178",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/927879189507670020/--_rBgwK_normal.jpg",
+        "profile_link_color": "1DA1F2",
+        "profile_sidebar_fill_color": "DDEEF6",
+        "profile_text_color": "333333",
+        "screen_name": "CynSg65",
+        "statuses_count": 15815
+    },
+    "user_mentions": [{
+        "id": 822491959805825027,
+        "name": "When Is Trump Gone?",
+        "screen_name": "DaysLeft4Trump"
+    }, {
+        "id": 25073877,
+        "name": "Donald J. Trump",
+        "screen_name": "realDonaldTrump"
+    }]
+}

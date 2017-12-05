@@ -1,0 +1,49 @@
+{
+    "created_at": "Sun Oct 08 20:52:43 +0000 2017",
+    "favorite_count": 123,
+    "hashtags": [],
+    "id": 917130661357543424,
+    "id_str": "917130661357543424",
+    "in_reply_to_screen_name": "ChrisCaesar",
+    "in_reply_to_status_id": 917130529996181504,
+    "in_reply_to_user_id": 20655790,
+    "lang": "en",
+    "retweet_count": 4,
+    "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+    "text": "@ChrisCaesar @realDonaldTrump Absolutely nothing.",
+    "urls": [],
+    "user": {
+        "created_at": "Thu Nov 10 05:01:45 +0000 2016",
+        "description": "The Party of Reason and Progress is an organization dedicated to promoting reason, the scientific method, & empirically sound decision-making in modern politics",
+        "favourites_count": 1493,
+        "followers_count": 25339,
+        "friends_count": 620,
+        "id": 796578568176365568,
+        "lang": "en",
+        "listed_count": 216,
+        "location": "United States",
+        "name": "PORP",
+        "profile_background_color": "000000",
+        "profile_background_image_url": "http://abs.twimg.com/images/themes/theme1/bg.png",
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/796578568176365568/1479108369",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/825202431453696000/QOG5sYcn_normal.jpg",
+        "profile_link_color": "1B95E0",
+        "profile_sidebar_fill_color": "000000",
+        "profile_text_color": "000000",
+        "screen_name": "TheOfficialPORP",
+        "statuses_count": 4335,
+        "time_zone": "Eastern Time (US & Canada)",
+        "url": "https://t.co/m1heSK7aPQ",
+        "utc_offset": -18000,
+        "verified": true
+    },
+    "user_mentions": [{
+        "id": 20655790,
+        "name": "i have died",
+        "screen_name": "ChrisCaesar"
+    }, {
+        "id": 25073877,
+        "name": "Donald J. Trump",
+        "screen_name": "realDonaldTrump"
+    }]
+}

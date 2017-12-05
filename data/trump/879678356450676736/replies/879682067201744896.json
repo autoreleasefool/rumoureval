@@ -1,0 +1,47 @@
+{
+    "created_at": "Tue Jun 27 12:45:23 +0000 2017",
+    "favorite_count": 5,
+    "hashtags": [],
+    "id": 879682067201744896,
+    "id_str": "879682067201744896",
+    "in_reply_to_screen_name": "realDonaldTrump",
+    "in_reply_to_status_id": 879678356450676736,
+    "in_reply_to_user_id": 25073877,
+    "lang": "en",
+    "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+    "text": "@realDonaldTrump They should lose federal communication license &amp; pay a massive fine! If there is no laws on the bo\u2026 https://t.co/wj09spPD0R",
+    "truncated": true,
+    "urls": [{
+        "expanded_url": "https://twitter.com/i/web/status/879682067201744896",
+        "url": "https://t.co/wj09spPD0R"
+    }],
+    "user": {
+        "created_at": "Thu Jul 16 03:48:55 +0000 2009",
+        "default_profile": true,
+        "description": "Proud American Made In The USA. #TrumpPence20 #MAGA #2A #Israel Constitution Is Not Outdated! Alt-Left Liberals Don't Follow You Won't Like What I Say!",
+        "favourites_count": 13764,
+        "followers_count": 8855,
+        "friends_count": 8791,
+        "id": 57234339,
+        "lang": "en",
+        "listed_count": 54,
+        "location": "U.S.A.",
+        "name": "mrsienk",
+        "profile_background_color": "C0DEED",
+        "profile_background_image_url": "http://abs.twimg.com/images/themes/theme1/bg.png",
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/57234339/1466029124",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/711512130185355266/Suavh1jn_normal.jpg",
+        "profile_link_color": "1DA1F2",
+        "profile_sidebar_fill_color": "DDEEF6",
+        "profile_text_color": "333333",
+        "screen_name": "rsienkiewicz",
+        "statuses_count": 26261,
+        "time_zone": "Central Time (US & Canada)",
+        "utc_offset": -21600
+    },
+    "user_mentions": [{
+        "id": 25073877,
+        "name": "Donald J. Trump",
+        "screen_name": "realDonaldTrump"
+    }]
+}

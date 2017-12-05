@@ -1,0 +1,39 @@
+{
+    "created_at": "Sun Oct 08 21:12:29 +0000 2017",
+    "hashtags": [],
+    "id": 917135634329997312,
+    "id_str": "917135634329997312",
+    "in_reply_to_screen_name": "realDonaldTrump",
+    "in_reply_to_status_id": 917130468025348096,
+    "in_reply_to_user_id": 25073877,
+    "lang": "en",
+    "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+    "text": "@realDonaldTrump What are YOU doing about this, besides badmouthing people on Twitter????",
+    "urls": [],
+    "user": {
+        "created_at": "Fri Aug 26 05:48:39 +0000 2016",
+        "favourites_count": 16,
+        "followers_count": 9,
+        "friends_count": 46,
+        "id": 769048893665452033,
+        "lang": "en",
+        "location": "Manhattan, NY",
+        "name": "wsarcona",
+        "profile_background_color": "000000",
+        "profile_background_image_url": "http://abs.twimg.com/images/themes/theme1/bg.png",
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/769048893665452033/1484776911",
+        "profile_image_url": "http://pbs.twimg.com/profile_images/821761659874275328/pv8ZERt0_normal.jpg",
+        "profile_link_color": "0084B4",
+        "profile_sidebar_fill_color": "000000",
+        "profile_text_color": "000000",
+        "screen_name": "wmsmomo",
+        "statuses_count": 142,
+        "time_zone": "Pacific Time (US & Canada)",
+        "utc_offset": -28800
+    },
+    "user_mentions": [{
+        "id": 25073877,
+        "name": "Donald J. Trump",
+        "screen_name": "realDonaldTrump"
+    }]
+}

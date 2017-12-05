@@ -1,0 +1,120 @@
+==============================
+
+Beginning `train` data import
+Took 4.931s to import `train` data
+
+==============================
+
+Beginning `trump` data import
+Took 0.010s to import `trump` data
+
+==============================
+
+Beginning SDQC Task (Task A)
+Filter tweets from training set
+Initializing pipeline
+Query pipeline
+Pipeline(memory=None,
+     steps=[('extract_tweets', TweetDetailExtractor(classifications=None, strip_hashtags=False,
+           strip_mentions=False, task='A')), ('union', FeatureUnion(n_jobs=1,
+       transformer_list=[('count_depth', Pipeline(memory=None,
+     steps=[('selector', ItemSelector(keys='depth')), ('count', Feat...,
+  max_iter=-1, probability=False, random_state=None, shrinking=True,
+  tol=0.001, verbose=False))])
+Base pipeline
+Pipeline(memory=None,
+     steps=[('extract_tweets', TweetDetailExtractor(classifications=None, strip_hashtags=False,
+           strip_mentions=False, task='A')), ('union', FeatureUnion(n_jobs=1,
+       transformer_list=[('tweet_text', Pipeline(memory=None,
+     steps=[('selector', ItemSelector(keys='text_stemmed_stopped')), ...,
+  max_iter=-1, probability=False, random_state=None, shrinking=True,
+  tol=0.001, verbose=False))])
+Beginning training
+base_pipeline training:  0.070s
+query_pipeline training: 0.005s
+
+Beginning evaluation
+Completed SDQC Task (Task A). Printing results
+query_accuracy:   0.885
+base accuracy:    0.462
+accuracy:         0.500
+classification report (query):
+             precision    recall  f1-score   support
+
+  not_query       0.95      0.91      0.93        23
+      query       0.50      0.67      0.57         3
+
+avg / total       0.90      0.88      0.89        26
+
+classification report (base):
+/Users/josephroque/.virtualenvs/csi4900/lib/python3.6/site-packages/sklearn/metrics/classification.py:1135: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples.
+  'precision', 'predicted', average, warn_for)
+             precision    recall  f1-score   support
+
+    comment       0.43      1.00      0.61        10
+       deny       0.00      0.00      0.00         6
+      query       0.00      0.00      0.00         3
+    support       1.00      0.29      0.44         7
+
+avg / total       0.44      0.46      0.35        26
+
+classification report (combined):
+             precision    recall  f1-score   support
+
+    comment       0.47      0.90      0.62        10
+       deny       0.00      0.00      0.00         6
+      query       0.50      0.67      0.57         3
+    support       1.00      0.29      0.44         7
+
+avg / total       0.51      0.50      0.42        26
+
+confusion matrix (query):
+[[21  2]
+ [ 1  2]]
+confusion matrix (base):
+[[10  0  0  0]
+ [ 6  0  0  0]
+ [ 3  0  0  0]
+ [ 4  1  0  2]]
+confusion matrix (combined):
+[[9 0 1 0]
+ [5 0 1 0]
+ [1 0 2 0]
+ [4 1 0 2]]
+
+==============================
+
+Beginning Veracity Prediction Task (Task B)
+Filter tweets from training set
+Initializing pipeline
+Pipeline(memory=None,
+     steps=[('extract_tweets', TweetDetailExtractor(classifications={'879678356450676736': 'support', '917130468025348096': 'support', '879679635788890112': 'comment', '879683604519022593': 'comment', '879684582559199233': 'comment', '879682067201744896': 'comment', '879678387849134084': 'comment', '8796...',
+  max_iter=-1, probability=True, random_state=None, shrinking=True,
+  tol=0.001, verbose=False))])
+
+classification report:
+/Users/josephroque/.virtualenvs/csi4900/lib/python3.6/site-packages/sklearn/metrics/classification.py:1428: UserWarning: labels size, 1, does not match size of target_names, 3
+  .format(len(labels), len(target_names))
+             precision    recall  f1-score   support
+
+      false       1.00      1.00      1.00         2
+
+avg / total       1.00      1.00      1.00         2
+
+confusion matrix:
+[[2]]
+
+==============================
+
+Scoring results of task A:
+------------------------------
+Output from ScorerA.py script:
+sdqc accuracy: 0.48148148148148145
+
+==============================
+
+Scoring results of task B:
+------------------------------
+Output from ScorerB.py script:
+veracity accuracy: 1.0
+confidence rmse:   0.30659790351282595

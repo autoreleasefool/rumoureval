@@ -1,0 +1,40 @@
+{
+    "created_at": "Tue Jun 27 12:55:22 +0000 2017",
+    "hashtags": [],
+    "id": 879684582559199233,
+    "id_str": "879684582559199233",
+    "in_reply_to_screen_name": "realDonaldTrump",
+    "in_reply_to_status_id": 879678356450676736,
+    "in_reply_to_user_id": 25073877,
+    "lang": "es",
+    "source": "<a href=\"http://twitter.com\" rel=\"nofollow\">Twitter Web Client</a>",
+    "text": "@realDonaldTrump liar",
+    "urls": [],
+    "user": {
+        "created_at": "Thu Jun 01 03:05:42 +0000 2017",
+        "default_profile": true,
+        "default_profile_image": true,
+        "description": "writer\ud83d\udef8",
+        "favourites_count": 56,
+        "followers_count": 4,
+        "friends_count": 33,
+        "id": 870114100994387969,
+        "lang": "en",
+        "location": "Sendai, Japan",
+        "name": "550AU",
+        "profile_background_color": "F5F8FA",
+        "profile_image_url": "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png",
+        "profile_link_color": "1DA1F2",
+        "profile_sidebar_fill_color": "DDEEF6",
+        "profile_text_color": "333333",
+        "screen_name": "550AU",
+        "statuses_count": 40,
+        "time_zone": "Tokyo",
+        "utc_offset": 32400
+    },
+    "user_mentions": [{
+        "id": 25073877,
+        "name": "Donald J. Trump",
+        "screen_name": "realDonaldTrump"
+    }]
+}
