@@ -320,7 +320,13 @@ def output_data_by_class(tweets, annotations, task, prefix=None):
         sorted_tweet_text[annotation] |= set(list(detail_extractor._tokenize(TweetDetailExtractor.get_parseable_tweet_text(tweet, task=task))))
 
     os.makedirs(get_output_path(), exist_ok=True)
+    LOGGER.info('Tweet distribution for task {}{}:'.format(prefix, task))
     for annotation in sorted_tweets:
+        LOGGER.info('\t{}: {} ({}%)'.format(
+            annotation,
+            len(sorted_tweets[annotation]),
+            len(sorted_tweets[annotation]) / len(tweets)
+            ))
         filename = ('{0}_{1}.json' if prefix is not None else '{1}.json').format(prefix, annotation)
         with open(os.path.join(get_output_path(), filename), 'w') as file:
             json.dump(sorted_tweets[annotation], file, sort_keys=True, indent=2)
