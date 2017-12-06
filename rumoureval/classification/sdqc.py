@@ -486,6 +486,6 @@ def build_base_pipeline():
         )),
 
         # Use a classifier on the result
-        ('classifier', SVC(C=100, gamma=0.001, kernel='rbf'))
+        ('classifier', SVC(C=0.01, gamma=0.001, kernel='rbf'))
 
     ])
