@@ -40,7 +40,21 @@ These are the final results for task B in the competition, with our personal res
 - python-magic ([see dependencies](https://github.com/ahupp/python-magic#dependencies))
     - For Mac, `brew install libmagic`
 
+### Setup
+
+- `pip install -r requirements.txt` to install Python library dependencies
+
 ### Running the code
+
+#### Recommended
+
+Try running `python3 -m rumoureval --test` to see the results of testing on validation data.
+
+After, you can do `python3 -m rumoureval` to run against the real data.
+
+Finally, run `python3 -m rumoureval --plot` to plot the output.
+
+#### Arguments
 
 `python3 -m rumoureval [--verbose] [--test] [--osorted] [--disable-cache] [--plot] [--trump]`
 
